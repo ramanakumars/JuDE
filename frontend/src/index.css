@@ -1,0 +1,45 @@
+section#index {
+	width: 50%;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	align-items: flex-start;
+	padding: 0.15em;
+	margin: auto;
+	padding-bottom: 2em;
+}
+
+section#hero h1 {
+	font-size: 2.1em;
+}
+
+section#hero p {
+	padding: 0.25em;
+}
+
+
+section#hero a {
+	color: var(--primary);
+	text-decoration: none;
+}
+
+section#hero a:hover {
+	text-decoration: underline;
+}
+
+section#mosaic-images {
+	width: 100%;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
+}
+
+section#mosaic-images span {
+	width: 23%;
+	padding: 0.25em;
+	margin: 0;
+}
+
+section#mosaic-images img{
+	width: 100%;
+}

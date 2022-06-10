@@ -1,0 +1,147 @@
+section#plot-info {
+    width: 20%;
+    margin: 0px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    background-color: var(--primary);
+    padding: 1.2em;
+    color: var(--bright-text);
+    box-sizing: border-box;
+    height: 100%;
+    overflow-y: hidden;
+}
+
+section#choose-plot-container {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: flex-start;
+}
+
+form#hist-variables {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	align-content: center;
+	padding: 0.15em;
+}
+
+form#hist-variables span {
+	width: 80%;
+	text-align: center;
+	padding: 0.15em;
+}
+
+
+
+section#plotter {
+    overflow-y: auto;
+    margin: 0.25em;
+    padding: 0.25em;
+    box-sizing: border-box;
+}
+
+nav#plot-type {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav#plot-type span {
+    margin: 0px 2em;
+}
+
+label.plot-type:hover {
+    background-color: var(--tertiary);
+}
+
+#plotter {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#plot-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+div#plot {
+    width: 800px;
+    height: 600px;
+    padding: 0px;
+}
+
+div#hover-image {
+    margin: auto;
+}
+
+nav#plot-type {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+nav#plot-type span {
+    width: 45%; 
+	height: 4em;
+    margin: 0.25em;
+    padding: 0px;
+	text-align: center;
+}
+
+
+div.subject-images-container {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+}
+
+div.subject-images-container span {
+    max-width: 150px;
+    max-height: 150px;
+    margin: 0.15em;
+    padding: 0.15em;
+}
+
+div.subject-images-container img {
+    width: 100%;
+    max-width: 300px;
+}
+
+div.subject-images-container-hover span {
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    display: block;
+}
+
+div.image-page {
+	width: 100%;
+	text-align: center;
+}
+
+div.image-page button {
+	line-height: 1.2em; 
+	margin: 0em 0.25em;
+	border: 0px;
+	background: var(--secondary);
+	cursor: pointer;
+}
+
+div.image-page button:hover {
+	background: var(--tertiary);
+}
+

@@ -136,15 +136,15 @@ dmypy.json
 *.csv
 
 # dependencies
-/node_modules
-/.pnp
-.pnp.js
+*node_modules
+*.pnp
+*.pnp.js
 
 # testing
-/coverage
+*coverage
 
 # production
-/build
+*build
 
 # misc
 .DS_Store
