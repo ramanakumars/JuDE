@@ -297,27 +297,27 @@ def get_rand_imgs():
     return json.dumps({'lons': sub_lons, 'lats': sub_lats, 'IDs': sub_IDs, 
                        'PJs': sub_PJs, 'urls': sub_urls})
 
+# prepare the subject data
+subject_data = ascii.read('jvh_subjects.csv', format='csv')
+
+for subject in tqdm.tqdm(subject_data):
+    try:
+        meta = ast.literal_eval(subject['metadata'])
+        lons.append(float(meta['longitude']))
+        lats.append(float(meta['latitude']))
+        PJs.append(int(meta['perijove']))
+        urls.append(ast.literal_eval(subject['locations'])["0"])
+        IDs.append(int(subject['subject_id']))
+    except KeyError as e:
+        continue
+
+lons = np.asarray(lons)
+lats = np.asarray(lats)
+PJs  = np.asarray(PJs)
+urls = np.asarray(urls)
+IDs  = np.asarray(IDs)
+
+
 if __name__=='__main__':
-    # prepare the subject data
-    subject_data = ascii.read('jvh_subjects.csv', format='csv')
-
-    for subject in tqdm.tqdm(subject_data):
-        try:
-            meta = ast.literal_eval(subject['metadata'])
-            lons.append(float(meta['longitude']))
-            lats.append(float(meta['latitude']))
-            PJs.append(int(meta['perijove']))
-            urls.append(ast.literal_eval(subject['locations'])["0"])
-            IDs.append(int(subject['subject_id']))
-        except KeyError as e:
-            continue
-
-    lons = np.asarray(lons)
-    lats = np.asarray(lats)
-    PJs  = np.asarray(PJs)
-    urls = np.asarray(urls)
-    IDs  = np.asarray(IDs)
-
-
     app.run(debug=True, port=5500)
     
