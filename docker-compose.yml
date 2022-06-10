@@ -1,0 +1,9 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: jude-backend
+    environment: 
+      PANOPTES_USERNAME
+      PANOPTES_PASSWORD
