@@ -15,6 +15,7 @@ import axios from 'axios';
 import scatter from './images/scatter.png';
 import hist from './images/hist.png';
 import tutorial from './images/tutorial_jude.png';
+import subject_viewer from './images/subject_viewer.png';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -138,7 +139,8 @@ class Home extends React.Component {
 							see a zoomed out of the region around the subject to provide
 							context to the features seen in the subject.
 						</p>
-
+						
+						<img src={subject_viewer} style={{width: '100%'}} />
 
 					</section>
 				</section>
