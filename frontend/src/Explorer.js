@@ -38,7 +38,7 @@ class Explorer extends React.Component {
             data[chosen_vars[i]] = event.target.elements[chosen_vars[i]].value;
         }
 
-		fetch('http://localhost:5500/plot-exploration/', {
+		fetch('/backend/plot-exploration/', {
             method: 'POST',
             headers: {
               'Accept': 'application/json',

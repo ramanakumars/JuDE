@@ -45,7 +45,7 @@ class Home extends React.Component {
 	async componentDidMount() {
 		var data = {'n_images': this.state.nimages};
 
-		await fetch('http://localhost:5500/get-random-images/', {
+		await fetch('/backend/get-random-images/', {
 			method: 'POST',
 			headers: {
 			  'Accept': 'application/json',
@@ -127,7 +127,7 @@ class Home extends React.Component {
 							the subjects shown in the bottom.
 						</p>
 						
-						<img src={tutorial} style={{width: "100%"}} />
+						<img src={tutorial} />
 
 
 						<h2>Subject specific information</h2>
@@ -140,7 +140,7 @@ class Home extends React.Component {
 							context to the features seen in the subject.
 						</p>
 						
-						<img src={subject_viewer} style={{width: '100%'}} />
+						<img src={subject_viewer} />
 
 					</section>
 				</section>

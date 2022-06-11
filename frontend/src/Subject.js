@@ -46,7 +46,7 @@ class SubjectViewer extends React.Component {
 
 	async componentDidMount() {
 		// get the sset id and the type of plot selected by the user
-		const post_url = 'http://localhost:5500/get-subject-info/' + this.state.subject_id;
+		const post_url = '/backend/get-subject-info/' + this.state.subject_id;
 
 		var url, latitude, longitude, PJ;
 
@@ -122,9 +122,9 @@ class SubjectContextViewer extends React.Component {
 		}
 		var post_url;
 		if (this.state.type==='context') {
-			post_url = 'http://localhost:5500/get-context-image/' + this.state.subject_id;
+			post_url = '/backend/get-context-image/' + this.state.subject_id;
 		} else {
-			post_url = 'http://localhost:5500/get-global-image/' + this.state.subject_id;
+			post_url = '/backend/get-global-image/' + this.state.subject_id;
 		}
 
 		// send the data to Flask

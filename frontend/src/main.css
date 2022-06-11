@@ -31,11 +31,13 @@ html {
 
 body {
     width: 100%;
+	height: 100%;
     padding: 0px;
     margin: 0px;
     font-family: Karla, Arial, Helvetica, sans-serif;
     font-size: 12pt;
     color: var(--dark-text);
+	overflow-y: hidden;
 }
 
 article#main, div#root{
@@ -44,11 +46,13 @@ article#main, div#root{
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-	align-content: flex-start;
+	flex-flow: column;
+	height: 100%;
 }
 
 section#app {
     width: 100%;
+	height: 100%;
     box-sizing: border-box;
     padding: 0;
     display: flex;
