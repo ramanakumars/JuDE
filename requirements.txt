@@ -1,0 +1,13 @@
+numpy
+matplotlib
+scipy
+scikit-image
+plotly
+flask
+flask_cors
+tqdm
+pandas
+astropy
+netCDF4
+panoptes_client
+gunicorn
