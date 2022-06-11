@@ -10,6 +10,7 @@ import tqdm
 import os
 import base64
 import io
+import sys
 from skimage import io as skio
 import numpy as np
 import netCDF4 as nc
@@ -41,9 +42,8 @@ def index():
     return "Hello"
 
 #@cross_origin()
-@app.route('/get-subject-info/<subject_id>', methods=['GET','POST'])
+@app.route('/backend/get-subject-info/<subject_id>', methods=['GET','POST'])
 def get_subject_info(subject_id):
-    print(subject_id)
     try:
         subject   = Subject(int(subject_id))
     except Exception as e:
@@ -57,10 +57,9 @@ def get_subject_info(subject_id):
 
     response = Response(json.dumps({'subject_id': subject_id, 'subject_url': url, 
                                     'latitude': lat, 'longitude': lon, 'PJ': PJ}))
-    print('done')
     return response
 
-@app.route('/get-context-image/<subject_id>', methods=['GET'])
+@app.route('/backend/get-context-image/<subject_id>', methods=['GET'])
 def get_context_image(subject_id):
     try:
         subject   = Subject(int(subject_id))
@@ -73,6 +72,7 @@ def get_context_image(subject_id):
     lon = float(subject.metadata['longitude'])
 
     # get the image subset and new lat/lon
+    '''
     PJ_nc = f'../../projects/junocam/junodata/PJ{PJ}/nc/multi_proj_raw.nc'
 
     with nc.Dataset(PJ_nc, 'r') as dset:
@@ -87,6 +87,21 @@ def get_context_image(subject_id):
         lon_mask = (lons>lon-30)&(lons<lon+30)
 
         img_sub = img[lat_mask,lon_mask,:]
+    '''
+
+    img   = skio.imread(f'PJ{PJ}/globe_mosaic_highres.png')[::-1,:,:]
+    nroll = int(lon*25)
+    lon0  = lon - nroll/25.
+
+    img_roll = np.roll(img, -nroll, axis=1)
+
+    lons = np.linspace(-180, 180, 9000)
+    lats = np.linspace(-90, 90, 4500)
+
+    lon_mask = (lons>lon0-30)&(lons<lon0+30)
+    lat_mask = (lats>lat-20)&(lats<lat+20)
+
+    img_sub = img_roll[lat_mask,:][:,lon_mask,:]
     lon_sub = lons[lon_mask]
     lat_sub = lats[lat_mask]
 
@@ -97,11 +112,12 @@ def get_context_image(subject_id):
     rlt = rln/(np.cos(np.radians(LAT))*((np.sin(np.radians(LAT)))**2. + 
                                         ((re/rp)*np.cos(np.radians(LAT)))**2.))
     
-    dX = rln*np.abs(np.radians(LON - lon))
+    dX = rln*np.abs(np.radians(LON - lon0))
     dY = rlt*np.abs(np.radians(LAT - lat))
-
+    
     dX[dY>3.5e6] = 1.e20
     dY[dX>3.5e6] = 1.e20
+
 
     img_c_x = img_sub.shape[1]/2
     img_c_y = img_sub.shape[0]/2
@@ -119,14 +135,24 @@ def get_context_image(subject_id):
 
     plt.close()
 
+
+    lon_sub = lon_sub + nroll/25.
+    lon_sub[lon_sub > 180] -= 360.
+    
+    c1vert0x = c1vert0[:,0] +  nroll/25.
+    c1vert0x[c1vert0x > 180.] -= 360.
+    
+    c2vert0x = c2vert0[:,0] +  nroll/25.
+    c2vert0x[c2vert0x > 180.] -= 360.
+
     fig = px.imshow(img_sub, x=lon_sub, y=lat_sub,
                     labels={'x':'longitude', 'y': 'latitude'}, 
                     origin='lower', aspect='equal')
     fig.update_traces(hovertemplate='lon: %{x:4.2f}&deg;<br>lat: %{y:4.2f}&deg;', name='')
 
-    fig.add_trace(go.Scattergl(x=c1vert0[:,0], y=c1vert0[:,1], 
+    fig.add_trace(go.Scattergl(x=c1vert0x, y=c1vert0[:,1], 
                                line=(dict(width=5, color='black')), hoverinfo='skip'))
-    fig.add_trace(go.Scattergl(x=c2vert0[:,0], y=c2vert0[:,1], 
+    fig.add_trace(go.Scattergl(x=c2vert0x, y=c2vert0[:,1], 
                                line=(dict(width=5, color='black')), hoverinfo='skip'))
 
     fig.update_layout(coloraxis_showscale=False)
@@ -138,14 +164,12 @@ def get_context_image(subject_id):
     fig.update(layout_showlegend=False)
     fig.update_yaxes(range=[lat-10,lat+10], autorange=False)
     fig.update_xaxes(range=[lon-15,lon+15], autorange=False)
-    fig.update_xaxes(automargin=True)
     
-    print('done')
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)#Response(json.dumps({"url": plot_url}))
     #return Response(json.dumps({"url": plot_url}))
 
 
-@app.route('/get-global-image/<subject_id>', methods=['GET'])
+@app.route('/backend/get-global-image/<subject_id>', methods=['GET'])
 def get_mosaic_image(subject_id):
     try:
         subject   = Subject(int(subject_id))
@@ -179,7 +203,7 @@ def get_mosaic_image(subject_id):
     plt.close()
     '''
 
-    img_globe = skio.imread(f'../../projects/junocam/junodata/PJ{PJ}/globe_mosaic.png')
+    img_globe = skio.imread(f'PJ{PJ}/globe_mosaic.png')
 
 
     x = np.linspace(-180, 180, img_globe.shape[1])
@@ -232,9 +256,8 @@ def get_subjects_in_frame(lon, lat, PJ):
 
     return lats[mask], lons[mask]
 
-@app.route('/plot-exploration/', methods=['POST'])
+@app.route('/backend/plot-exploration/', methods=['POST'])
 def create_plot():
-    print(request.json)
     if request.method=='POST':
         plot_type      = request.json['plot_type']
         if plot_type not in ['scatter']:
@@ -280,7 +303,7 @@ def create_plot():
     return json.dumps({'data': output, 'layout': layout, 'subject_urls': urls.tolist(), 
                        'lats': lats.tolist(), 'lons': lons.tolist(), 'PJs': PJs.tolist(), "IDs": IDs.tolist()})
 
-@app.route('/get-random-images/', methods=['POST'])
+@app.route('/backend/get-random-images/', methods=['POST'])
 def get_rand_imgs():
     print(request.json)
     if request.method=='POST':
