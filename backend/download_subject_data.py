@@ -1,4 +1,5 @@
 from panoptes_client import Panoptes, Project
+from panoptes_client.panoptes import PanoptesAPIException
 import os
 from astropy.io import ascii
 from astropy.io.ascii.core import InconsistentTableError
@@ -20,7 +21,7 @@ try:
         out_file.write(export.content.decode('utf-8'))
 
     ascii.read('jvh_subjects.csv', format='csv')
-except InconsistentTableError:
+except (InconsistentTableError, PanoptesAPIException):
     print("Existing table failed! Re-generating!", flush=True)
     export = project.get_export('subjects', generate=True)
 
