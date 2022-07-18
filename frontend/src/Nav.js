@@ -5,7 +5,7 @@ class MainNav extends React.Component {
 		return (
 			<nav id='mainnav'>
 				<section className='apptitle'>
-					JunoCam Data Explorer
+					JuDE
 				</section>
 				<section className='nav'>
 					<a className='nav' href='/'>
