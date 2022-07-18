@@ -1,5 +1,5 @@
-# JunoCamDataExplorer
-React/Flask Web app to explore the Jovian Vortex Hunter data
+# JuDE (JunoCam Data Explorer)
+JuDE is a React/Flask-based web app to explore the [Jovian Vortex Hunter](https://www.zooniverse.org/projects/ramanakumars/jovian-vortex-hunter) data
 
 ## Running the production version (via docker)
 
