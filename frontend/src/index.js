@@ -76,7 +76,7 @@ class Home extends React.Component {
 				<MainNav />
 				<section id='index'>
 					<section id='hero'>
-						<h1>Welcome to JunoCam Data Explorer!</h1>
+						<h1>Welcome to JuDE (JunoCam Data Explorer)!</h1>
 						<section id='mosaic-images'>
 							{data.map(data => (
 								<SubjectImage key={data.ID+"_mosaic"} lon={data.lon} lat={data.lat}
