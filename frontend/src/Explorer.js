@@ -77,10 +77,8 @@ class Explorer extends React.Component {
 				// send the retrieved data to the plotter component which will 
 				// save the data and distribute it as needed to both the 
 				// subject image display component and the plotly component
-				this.subject_plotter.current.set_data(plotly_meta, layout, data.plot_type);
-				this.subject_plotter.current.filter_PJ(this.subset_PJ.current.state.minValue, 
-					this.subset_PJ.current.maxValue);
-
+				this.subject_plotter.current.set_data(plotly_meta, layout, data.plot_type, 
+					this.subset_PJ.current.state.minValue, this.subset_PJ.current.state.maxValue);
             } else {
                 
             }
@@ -135,19 +133,19 @@ class PlotContainer extends React.Component {
 		this.handleSelect = this.handleSelect.bind(this);
 	}
 
-	set_data(plotly_meta, layout, plot_type) {
+	set_data(plotly_meta, layout, plot_type, PJstart, PJend) {
 		/* 
 		 * main function for setting the data received from the backend
-		 * immediately calls `set_plot_data` to set the plotly data
+		 * immediately calls `filter_PJ` which calls the 
+		 * `set_plot_data` to set the plotly data
 		 */
 		this.setState({data: plotly_meta.data, layout: layout, 
 			subject_lats: plotly_meta.lats, subject_lons: plotly_meta.lons, 
 			subject_IDs: plotly_meta.IDs, subject_PJs: plotly_meta.PJs,
 			subject_urls: plotly_meta.subject_urls, plot_name: plot_type}, function() {
-				this.set_plot_data(this.state.data, this.state.subject_urls, this.state.subject_lons, 
-					this.state.subject_lats, this.state.subject_PJs, this.state.subject_IDs
-				)
+				this.filter_PJ(PJstart, PJend)
 			});
+
 	}
 
 	set_plot_data(data, urls, lons, lats, PJs, IDs) {
@@ -179,19 +177,26 @@ class PlotContainer extends React.Component {
 	}
 
 	filter_PJ(start, end) {
+		/*
+		 * filters the range of perijoves displayed 
+		 * called after plotting and also when the PJ slider is changed
+		 */
 		var urls = []; var lats = []; var lons = []; var IDs = []; var PJs = []; var data = {};
 		
+		// duplicate the plotly structure
 		for (var key in this.state.data) {
 			if ((key!='x')||(key!='y')) {
 				data[key] = this.state.data[key];
 			}
 		}
 
+		// create the same set of variables as the original plot
 		data.x = [];
 		if ('y' in this.state.data) {
 			data.y = [];
 		}
 
+		// copy over the data for the given perijove range
 		for(var i=0; i<this.state.subject_lons.length; i++) {
 			if ((this.state.subject_PJs[i] >= start)&(this.state.subject_PJs[i] <= end)) {
 				urls.push(this.state.subject_urls[i]);
@@ -207,17 +212,26 @@ class PlotContainer extends React.Component {
 			}
 		}
 
+		// refresh the plot
 		this.set_plot_data(data, urls, lons, lats, PJs, IDs);
 
 	}
 
 	handleHover(data) {
+		/*
+		 * function that handles the change of the hover image panel when
+		 * hovering over the plotly component
+		 */
 		this.hover_images.current.setState({subject_urls: data.urls, subject_lons: data.lons,
 			subject_lats: data.lats, subject_IDs: data.IDs, subject_PJs: data.PJs,
 			page: 0});
 	}
 	
 	handleSelect(data) {
+		/*
+		 * function that handles the change of the selection image panel when
+		 * lasso or box selecting data in the plotly component
+		 */
 		this.subject_images.current.setState({subject_urls: data.urls, subject_lons: data.lons,
 			subject_lats: data.lats, subject_IDs: data.IDs, subject_PJs: data.PJs,
 			page: 0});
@@ -259,6 +273,10 @@ class PlotContainer extends React.Component {
 }
 
 class ChoosePlotType extends React.Component {
+	/*
+	 * Form for choosing the type of plot (currently Histogram and Scatter)
+	 * will automatically create the subsequent form to choose the required variables
+	 */
     constructor(props) {
         super(props);
         this.state = {
