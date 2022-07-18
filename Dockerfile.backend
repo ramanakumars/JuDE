@@ -4,7 +4,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install -r ./requirements.txt
 COPY backend/PJimgs/ ./
-COPY backend/app.py backend/download_subject_data.py backend_start.sh ./
+COPY backend/app.py backend/jvh_subjects.csv backend_start.sh ./
 ENV FLASK_ENV production
 
 EXPOSE 5000

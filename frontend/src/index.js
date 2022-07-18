@@ -10,7 +10,6 @@ import Subject from './Subject.js';
 import Explorer from './Explorer';
 import SubjectImage from './SubjectImage.js';
 import MainNav from './Nav.js';
-import axios from 'axios';
 
 import scatter from './images/scatter.png';
 import hist from './images/hist.png';

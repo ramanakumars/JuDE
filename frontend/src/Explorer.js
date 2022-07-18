@@ -1,7 +1,8 @@
-import React from 'react';
+import React, {useState} from 'react';
 import Plot from 'react-plotly.js';
 import MainNav from './Nav.js';
 import SubjectImage from './SubjectImage.js';
+import MultiRangeSlider from "multi-range-slider-react";
 
 const var_names = {
     hist: ['x'],
@@ -12,25 +13,41 @@ const variables = {Latitude: 'latitude', Longitude: 'longitude', Perijove: 'peri
 
 
 class Explorer extends React.Component {
+	/* 
+	 * Main explorer app. Creates the forms for choosing plot type and variables
+	 * and also the subsequent display for the plot and the subject images
+	 */
 	constructor(props) {
 		super(props);
 
+		// create references for the child components
 		this.choose_plot_form = React.createRef();
 		this.create_plot_form = React.createRef();
 		this.subject_plotter  = React.createRef();
+		this.subset_PJ        = React.createRef();
 
+		// handleSubmit will handle the "Plot!" click button
 		this.handleSubmit = this.handleSubmit.bind(this);
 
+		// filter_by_PJ will handle the slider for perijove filtering
+		this.filter_by_PJ = this.filter_by_PJ.bind(this);
 	}
 
 	handleSubmit(event) {
-
-
+		/* 
+		 * handles the "Plot!" click by fetching the relevant
+		 * data from the child component forms
+		 * and sending to the backend API to retrieve the subject metadata
+		 * (i.e. lat, lon, PJ, ID, url, etc.)
+		 */
 		event.preventDefault();
 
+		// start building the data structure to send to the backend
         var data = {plot_type: this.choose_plot_form.current.state.chosen};
 
 		const chosen_vars = var_names[data.plot_type];
+
+		// get a list of chosen variables from the form elements
         for(var i=0; i<chosen_vars.length; i++) {
             if(event.target.elements[chosen_vars[i]].value==='') {
                 return;
@@ -38,28 +55,46 @@ class Explorer extends React.Component {
             data[chosen_vars[i]] = event.target.elements[chosen_vars[i]].value;
         }
 
+		// send to the backend
 		fetch('/backend/plot-exploration/', {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
+			// the input/output are in JSON format
             body: JSON.stringify(data)
         }).then( result => result.json()).then( plotly_meta => {
             if(!plotly_meta.error) {
+
+				// layout parameters for the Plotly element
                 var layout = plotly_meta.layout;
                 layout['hovermode'] = 'closest';
                 layout['width'] = 800;
                 layout['height'] = 600;
 
 
+				// send the retrieved data to the plotter component which will 
+				// save the data and distribute it as needed to both the 
+				// subject image display component and the plotly component
 				this.subject_plotter.current.set_data(plotly_meta, layout, data.plot_type);
+				this.subject_plotter.current.filter_PJ(this.subset_PJ.current.state.minValue, 
+					this.subset_PJ.current.maxValue);
 
             } else {
                 
             }
         })
+	}
 
+	filter_by_PJ(event) {
+		/* 
+		 * handles the perijove slider for filtering the displayed data
+		 */
+
+		// this is handled mainly by the plotter component since that is where
+		// the data is stored
+		this.subject_plotter.current.filter_PJ(this.subset_PJ.current.state.minValue, this.subset_PJ.current.state.maxValue);
 	}
 
 	render() {
@@ -69,6 +104,7 @@ class Explorer extends React.Component {
 				<section id='app'>
 					<section id='plot-info'>
 						<ChoosePlotType ref={this.choose_plot_form} onSubmit={this.handleSubmit}/>
+						<SubsetPJ ref={this.subset_PJ} onChange={this.filter_by_PJ}  />
 					</section>
 					<PlotContainer ref={this.subject_plotter} />
 				</section>
@@ -79,33 +115,100 @@ class Explorer extends React.Component {
 
 
 class PlotContainer extends React.Component {
+	/* 
+	 * Main display component for the Plotly plots and the subject images
+	 * also handles the data distribution between the plotly components
+	 * and the subject image display
+	 */
+
 	constructor(props) {
 		super(props);
 
+		// create links to child components for plotting the 
+		// subject images and the plotly component
 		this.subject_images  = React.createRef();
 		this.subject_plotter = React.createRef();
 		this.hover_images    = React.createRef();
 
+		// create handlers for hovering over/selecting the plotly data
 		this.handleHover  = this.handleHover.bind(this);
 		this.handleSelect = this.handleSelect.bind(this);
 	}
 
 	set_data(plotly_meta, layout, plot_type) {
-
-		this.subject_images.current.setState({subject_urls: plotly_meta.subject_urls, 
-			subject_lats: plotly_meta.lats, subject_lons: plotly_meta.lons, 
-			subject_IDs: plotly_meta.IDs, subject_PJs: plotly_meta.PJs
-		});
-		this.hover_images.current.setState({subject_urls: [plotly_meta.subject_urls[0]], 
-			subject_lats: [plotly_meta.lats[0]], subject_lons: [plotly_meta.lons[0]], 
-			subject_IDs: [plotly_meta.IDs[0]], subject_PJs: [plotly_meta.PJs[0]]
-		});
-
-		this.subject_plotter.current.setState({data: [plotly_meta.data], layout: layout, 
+		/* 
+		 * main function for setting the data received from the backend
+		 * immediately calls `set_plot_data` to set the plotly data
+		 */
+		this.setState({data: plotly_meta.data, layout: layout, 
 			subject_lats: plotly_meta.lats, subject_lons: plotly_meta.lons, 
 			subject_IDs: plotly_meta.IDs, subject_PJs: plotly_meta.PJs,
-			subject_urls: plotly_meta.subject_urls, plot_name: plot_type});
+			subject_urls: plotly_meta.subject_urls, plot_name: plot_type}, function() {
+				this.set_plot_data(this.state.data, this.state.subject_urls, this.state.subject_lons, 
+					this.state.subject_lats, this.state.subject_PJs, this.state.subject_IDs
+				)
+			});
+	}
+
+	set_plot_data(data, urls, lons, lats, PJs, IDs) {
+		/*
+		 * sets the relevant data to the plotly component and subject image
+		 * display for plotting purposes
+		 * by default is called when the backend receives data from clicking 
+		 * "Plot!"
+		 */
+
+		// set the data for the main set of subject images at the bottom
+		this.subject_images.current.setState({subject_urls: urls, 
+			subject_lats: lats, subject_lons: lons, 
+			subject_IDs: IDs, subject_PJs: PJs
+		});
+
+		// set the data for the images on hover on the right
+		// by default only sets the first element of the subject list
+		this.hover_images.current.setState({subject_urls: [urls[0]], 
+			subject_lats: [lats[0]], subject_lons: [lons[0]], 
+			subject_IDs: [IDs[0]], subject_PJs: [PJs[0]]
+		});
+
+		// set the data for the plotly component
+		this.subject_plotter.current.setState({data: [data], layout: this.state.layout, 
+			subject_lats: lats, subject_lons: lons, 
+			subject_IDs: IDs, subject_PJs: PJs,
+			subject_urls: urls, plot_name: this.state.plot_name});
+	}
+
+	filter_PJ(start, end) {
+		var urls = []; var lats = []; var lons = []; var IDs = []; var PJs = []; var data = {};
 		
+		for (var key in this.state.data) {
+			if ((key!='x')||(key!='y')) {
+				data[key] = this.state.data[key];
+			}
+		}
+
+		data.x = [];
+		if ('y' in this.state.data) {
+			data.y = [];
+		}
+
+		for(var i=0; i<this.state.subject_lons.length; i++) {
+			if ((this.state.subject_PJs[i] >= start)&(this.state.subject_PJs[i] <= end)) {
+				urls.push(this.state.subject_urls[i]);
+				lons.push(this.state.subject_lons[i]);
+				lats.push(this.state.subject_lats[i]);
+				IDs.push(this.state.subject_IDs[i]);
+				PJs.push(this.state.subject_PJs[i]);
+				data.x.push(this.state.data.x[i]);
+
+				if( 'y' in this.state.data) {
+					data.y.push(this.state.data.y[i]);
+				}
+			}
+		}
+
+		this.set_plot_data(data, urls, lons, lats, PJs, IDs);
+
 	}
 
 	handleHover(data) {
@@ -260,6 +363,43 @@ class CreatePlotForm extends React.Component {
 }
 
 
+class SubsetPJ extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {minValue: 13, maxValue: 36};
+	}
+
+	handleInput(e) {
+		this.setState({maxValue: e.maxValue, minValue: e.minValue});
+
+		this.props.onChange(e);
+	}
+
+	render() {
+		return (
+
+			<div id='filter-pj'>
+				<label>Filter by perijove</label>
+				<MultiRangeSlider
+					min={13}
+					max={36}
+					step={1}
+					ruler={false}
+					label={true}
+					preventWheel={false}
+					minValue={this.state.minValue}
+					maxValue={this.state.maxValue}
+					onInput={(e) => {
+						this.handleInput(e);
+					}}
+				/>
+			</div>
+
+		)
+	}
+}
+
+
 class SubjectPlotter extends React.Component {
     constructor(props) {
         super(props);
@@ -398,7 +538,6 @@ class SubjectImages extends React.Component {
 
 		this.prevPage = this.prevPage.bind(this);
 		this.nextPage = this.nextPage.bind(this);
-		
     }
 
 	prevPage(e) {

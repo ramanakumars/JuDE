@@ -4,8 +4,8 @@ WORKDIR /app
 ENV PATH /app/node_modules/.bin:$PATH
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install
-COPY ./frontend/src ./src
-COPY ./frontend/public ./public
+ADD ./frontend/src ./src
+ADD ./frontend/public ./public
 RUN npm run build
 
 # Build step #2: build an nginx container

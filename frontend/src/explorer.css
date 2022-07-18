@@ -145,3 +145,54 @@ div.image-page button:hover {
 	background: var(--tertiary);
 }
 
+
+div#filter-pj {
+	width: 100%;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: text-start;
+}
+
+div#filter-pj label {
+	width: 100%;
+}
+
+.multi-range-slider {
+	width: 100%;
+	border: 0px !important;
+	box-shadow: none !important;
+}
+
+div.multi-range-slider div.thumb::before {
+	background-color: var(--secondary) !important;
+	margin: -7px !important;
+	width: 20px !important;
+	height: 20px !important;
+	border: 0px !important;
+	box-shadow: none !important;
+}
+
+div.multi-range-slider div.bar-left, div.multi-range-slider div.bar-right {
+	background-color: var(--dark) !important;
+	box-shadow: none !important;
+}
+
+div.multi-range-slider div.min-value, div.multi-range-slider div.max-value {
+	background-color: white !important;
+	color: var(--dark-text) !important;
+	box-shadow: none !important;
+}
+
+div.multi-range-slider div.thumb {
+	background-color: white !important;
+	color: var(--dark-text) !important;
+	box-shadow: none !important;
+}
+
+
+.multi-range-slider .bar-inner {
+	background-color: var(--secondary) !important;
+	box-shadow: none !important;
+	border: 0px !important;
+}
+

@@ -4,13 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     image: jude-backend
-    environment: 
-      - PANOPTES_USERNAME=$PANOPTES_USERNAME
-      - PANOPTES_PASSWORD=$PANOPTES_PASSWORD
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
     image: jude-frontend
+    volumes:
+      - ./frontend/:/app
     ports:
       - "3000:80"
