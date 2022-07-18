@@ -41,15 +41,19 @@ CORS(app)
 def index():
     return "Hello"
 
-#@cross_origin()
 @app.route('/backend/get-subject-info/<subject_id>', methods=['GET','POST'])
 def get_subject_info(subject_id):
+    '''
+        Retrieve the metadata information for a given subject
+    '''
     try:
+        # check if the subject exists in the subject set
         subject   = Subject(int(subject_id))
     except Exception as e:
         print(e)
         return json.dumps({"error": "No such subject found"})
 
+    # get the relevant metadata (including the image for the subject)
     url = subject.raw['locations'][0]['image/png']
     lat = float(subject.metadata['latitude'])
     PJ  = int(subject.metadata['perijove'])
@@ -61,6 +65,10 @@ def get_subject_info(subject_id):
 
 @app.route('/backend/get-context-image/<subject_id>', methods=['GET'])
 def get_context_image(subject_id):
+    '''
+        Creates a Plotly plot that shows the location of the subject
+        in the main mosaic
+    '''
     try:
         subject   = Subject(int(subject_id))
     except Exception as e:
@@ -70,24 +78,6 @@ def get_context_image(subject_id):
     lat = float(subject.metadata['latitude'])
     PJ  = int(subject.metadata['perijove'])
     lon = float(subject.metadata['longitude'])
-
-    # get the image subset and new lat/lon
-    '''
-    PJ_nc = f'../../projects/junocam/junodata/PJ{PJ}/nc/multi_proj_raw.nc'
-
-    with nc.Dataset(PJ_nc, 'r') as dset:
-
-        lon_rot = dset.lon_rot
-
-        img  = dset.variables['img_corr']
-        lats = dset.variables['lat'][:]
-        lons = dset.variables['lon'][:]
-
-        lat_mask = (lats>lat-20)&(lats<lat+20)
-        lon_mask = (lons>lon-30)&(lons<lon+30)
-
-        img_sub = img[lat_mask,lon_mask,:]
-    '''
 
     img   = skio.imread(f'PJ{PJ}/globe_mosaic_highres.png')[::-1,:,:]
     nroll = int(lon*25)
@@ -145,7 +135,7 @@ def get_context_image(subject_id):
     c2vert0x = c2vert0[:,0] +  nroll/25.
     c2vert0x[c2vert0x > 180.] -= 360.
 
-    fig = px.imshow(img_sub, x=lon_sub, y=lat_sub,
+    fig = px.imshow(img, x=lons, y=lats,#img_sub, x=lon_sub, y=lat_sub,
                     labels={'x':'longitude', 'y': 'latitude'}, 
                     origin='lower', aspect='equal')
     fig.update_traces(hovertemplate='lon: %{x:4.2f}&deg;<br>lat: %{y:4.2f}&deg;', name='')
@@ -171,6 +161,10 @@ def get_context_image(subject_id):
 
 @app.route('/backend/get-global-image/<subject_id>', methods=['GET'])
 def get_mosaic_image(subject_id):
+    '''
+        Creates a small static plot with a 'x' marking the location of the 
+        subject in the main mosaic
+    '''
     try:
         subject   = Subject(int(subject_id))
     except Exception as e:
@@ -182,42 +176,13 @@ def get_mosaic_image(subject_id):
     lon = float(subject.metadata['longitude'])
 
     # plot out the image and bounding box
-    '''
-    fig, ax = plt.subplots(1,1,dpi=300,facecolor='black')
-    img_globe = plt.imread(f'../../projects/junocam/junodata/PJ{PJ}/globe_mosaic.png')
-    ax.imshow(img_globe, extent=(-180, 180, -90, 90))
-    #ax.scatter(sub_lons, sub_lats, s=0.5, color='k', marker='o')
-    ax.plot(lon, lat, 'kx', markersize=8)
-    ax.set_xlim(-180, 180)
-    ax.set_ylim(-90, 90)
-    ax.axis('off')
-    plt.tight_layout(pad=0)
-    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
-            hspace = 0, wspace = 0)
-    plt.margins(0,0)
-
-    # save the output as a BytesIO object
-    output = io.BytesIO()
-    plt.savefig(output, bbox_inches='tight', pad_inches=0)
-    plot_url = base64.b64encode(output.getvalue()).decode('utf8')
-    plt.close()
-    '''
-
     img_globe = skio.imread(f'PJ{PJ}/globe_mosaic.png')
-
 
     x = np.linspace(-180, 180, img_globe.shape[1])
     y = np.linspace(-90, 90, img_globe.shape[0])
 
     layout = go.Layout(
         autosize=False,
-        margin=go.Margin(
-            l=0,
-            r=0,
-            b=0,
-            t=0,
-            pad=0
-        ),
         paper_bgcolor= 'black',
         plot_bgcolor= 'black',
     )
@@ -258,6 +223,9 @@ def get_subjects_in_frame(lon, lat, PJ):
 
 @app.route('/backend/plot-exploration/', methods=['POST'])
 def create_plot():
+    '''
+        Creates a Plotly plot with the requested variables and plot type
+    '''
     if request.method=='POST':
         plot_type      = request.json['plot_type']
         if plot_type not in ['scatter']:
@@ -305,7 +273,10 @@ def create_plot():
 
 @app.route('/backend/get-random-images/', methods=['POST'])
 def get_rand_imgs():
-    print(request.json)
+    '''
+        For the main page -- retrieves a set of random `n_images` 
+        number of images to display
+    '''
     if request.method=='POST':
         n_images = request.json['n_images']
 
