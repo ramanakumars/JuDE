@@ -604,8 +604,10 @@ class SubjectImages extends React.Component {
             style = {width: '28%'};
         }
 
+		var rand_key = Math.random();
+
         return (
-            <div className={'subject-images-container subject-images-container-'+this.state.render_type}>
+            <div key={rand_key} className={'subject-images-container subject-images-container-'+this.state.render_type}>
 				<div className='image-page'>
 					<button onClick={this.prevPage}>&laquo;</button>
 						{this.state.page+1} / {this.npages}
