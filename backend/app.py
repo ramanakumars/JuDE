@@ -305,12 +305,11 @@ for subject in tqdm.tqdm(subject_data):
     except KeyError as e:
         continue
 
-lons = np.asarray(lons)
-lats = np.asarray(lats)
-PJs  = np.asarray(PJs)
-urls = np.asarray(urls)
-IDs  = np.asarray(IDs)
-
+IDs, inds  = np.unique(np.asarray(IDs), return_index=True)
+lons = np.asarray(lons)[inds]
+lats = np.asarray(lats)[inds]
+PJs  = np.asarray(PJs)[inds]
+urls = np.asarray(urls)[inds]
 
 if __name__=='__main__':
     app.run(debug=True, port=5500)
