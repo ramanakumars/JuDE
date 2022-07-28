@@ -1,0 +1,2 @@
+0 */12 * * * /app/refresh_subject_data.sh >> /app/subject_data_log 2>&1
+

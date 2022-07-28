@@ -25,12 +25,14 @@ class Explorer extends React.Component {
 		this.create_plot_form = React.createRef();
 		this.subject_plotter  = React.createRef();
 		this.subset_PJ        = React.createRef();
+		this.vortex_selector  = React.createRef();
 
 		// handleSubmit will handle the "Plot!" click button
 		this.handleSubmit = this.handleSubmit.bind(this);
 
-		// filter_by_PJ will handle the slider for perijove filtering
-		this.filter_by_PJ = this.filter_by_PJ.bind(this);
+		// filter will handle the slider for perijove filtering and 
+		// "vortex only" selection
+		this.filter = this.filter.bind(this);
 	}
 
 	handleSubmit(event) {
@@ -78,21 +80,24 @@ class Explorer extends React.Component {
 				// save the data and distribute it as needed to both the 
 				// subject image display component and the plotly component
 				this.subject_plotter.current.set_data(plotly_meta, layout, data.plot_type, 
-					this.subset_PJ.current.state.minValue, this.subset_PJ.current.state.maxValue);
+					this.subset_PJ.current.state.minValue, this.subset_PJ.current.state.maxValue,
+					this.vortex_selector.current.state.checked
+				);
             } else {
                 
             }
         })
 	}
 
-	filter_by_PJ(event) {
+	filter(event) {
 		/* 
 		 * handles the perijove slider for filtering the displayed data
 		 */
 
 		// this is handled mainly by the plotter component since that is where
 		// the data is stored
-		this.subject_plotter.current.filter_PJ(this.subset_PJ.current.state.minValue, this.subset_PJ.current.state.maxValue);
+		this.subject_plotter.current.filter(this.subset_PJ.current.state.minValue, 
+			this.subset_PJ.current.state.maxValue, this.vortex_selector.current.state.checked);
 	}
 
 	render() {
@@ -102,7 +107,8 @@ class Explorer extends React.Component {
 				<section id='app'>
 					<section id='plot-info'>
 						<ChoosePlotType ref={this.choose_plot_form} onSubmit={this.handleSubmit}/>
-						<SubsetPJ ref={this.subset_PJ} onChange={this.filter_by_PJ}  />
+						<SubsetPJ ref={this.subset_PJ} onChange={this.filter}  />
+						<VortexSelector ref={this.vortex_selector} onChange={this.filter} />
 					</section>
 					<PlotContainer ref={this.subject_plotter} />
 				</section>
@@ -133,7 +139,7 @@ class PlotContainer extends React.Component {
 		this.handleSelect = this.handleSelect.bind(this);
 	}
 
-	set_data(plotly_meta, layout, plot_type, PJstart, PJend) {
+	set_data(plotly_meta, layout, plot_type, PJstart, PJend, vortex_only) {
 		/* 
 		 * main function for setting the data received from the backend
 		 * immediately calls `filter_PJ` which calls the 
@@ -142,8 +148,9 @@ class PlotContainer extends React.Component {
 		this.setState({data: plotly_meta.data, layout: layout, 
 			subject_lats: plotly_meta.lats, subject_lons: plotly_meta.lons, 
 			subject_IDs: plotly_meta.IDs, subject_PJs: plotly_meta.PJs,
-			subject_urls: plotly_meta.subject_urls, plot_name: plot_type}, function() {
-				this.filter_PJ(PJstart, PJend)
+			subject_urls: plotly_meta.subject_urls, is_vortex: plotly_meta.is_vortex,
+			plot_name: plot_type}, function() {
+				this.filter(PJstart, PJend, vortex_only)
 			});
 
 	}
@@ -176,7 +183,7 @@ class PlotContainer extends React.Component {
 			subject_urls: urls, plot_name: this.state.plot_name});
 	}
 
-	filter_PJ(start, end) {
+	filter(start, end, vortex_only) {
 		/*
 		 * filters the range of perijoves displayed 
 		 * called after plotting and also when the PJ slider is changed
@@ -198,6 +205,10 @@ class PlotContainer extends React.Component {
 
 		// copy over the data for the given perijove range
 		for(var i=0; i<this.state.subject_lons.length; i++) {
+			if((vortex_only)&(!this.state.is_vortex[i])) {
+				continue;
+			}
+
 			if ((this.state.subject_PJs[i] >= start)&(this.state.subject_PJs[i] <= end)) {
 				urls.push(this.state.subject_urls[i]);
 				lons.push(this.state.subject_lons[i]);
@@ -214,9 +225,8 @@ class PlotContainer extends React.Component {
 
 		// refresh the plot
 		this.set_plot_data(data, urls, lons, lats, PJs, IDs);
-
 	}
-
+	
 	handleHover(data) {
 		/*
 		 * function that handles the change of the hover image panel when
@@ -413,6 +423,30 @@ class SubsetPJ extends React.Component {
 				/>
 			</div>
 
+		)
+	}
+}
+
+class VortexSelector extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {checked: false};
+
+		this.handleInput = this.handleInput.bind(this);
+	}
+
+	handleInput(e) {
+		this.state.checked = e.target.checked;
+		
+		this.props.onChange(e);
+	}
+
+	render() {
+		return (
+			<div id="vortex_checkbox">
+				<input type="checkbox" name="vortex_only" id="vortex_only" onChange={this.handleInput} />
+				<label for="vortex_only">Show vortices only </label>
+			</div>
 		)
 	}
 }

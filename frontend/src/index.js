@@ -111,7 +111,7 @@ class Home extends React.Component {
 							</li>
 							<img src={scatter} />
 							<li>
-								<b>Histogram</b>
+								<b>Histogram</b>: 
 								The histogram allows you to see how many subjects correspond to a given
 								range of values. For examples, plotting a histogram of perijoves shows
 								you how many images are taken from each perijove. 

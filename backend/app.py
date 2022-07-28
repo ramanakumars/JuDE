@@ -1,10 +1,11 @@
 from re import sub
 import matplotlib.pyplot as plt
 from flask import Flask, render_template, request, Response
-from panoptes_client import Project, Workflow, Subject, SubjectSet
+from panoptes_client import Panoptes, Subject, SubjectSet
 import subprocess
 import json
 import ast
+import yaml
 import time
 import tqdm
 import os
@@ -26,11 +27,12 @@ re     = 71492e3
 rp     = re*(1 - flat)
 pixres = 25./np.radians(1)
 
-urls = []
-lats = []
-lons = []
-PJs  = []
-IDs  = []
+urls       = []
+lats       = []
+lons       = []
+PJs        = []
+IDs        = []
+is_vortex  = []
 
 plotly_type = {'hist': 'histogram', 'scatter': 'scattergl'}
 
@@ -269,7 +271,8 @@ def create_plot():
 
 
     return json.dumps({'data': output, 'layout': layout, 'subject_urls': urls.tolist(), 
-                       'lats': lats.tolist(), 'lons': lons.tolist(), 'PJs': PJs.tolist(), "IDs": IDs.tolist()})
+                       'lats': lats.tolist(), 'lons': lons.tolist(), 'PJs': PJs.tolist(), 
+                       "IDs": IDs.tolist(), "is_vortex": is_vortex.tolist()})
 
 @app.route('/backend/get-random-images/', methods=['POST'])
 def get_rand_imgs():
@@ -291,25 +294,56 @@ def get_rand_imgs():
     return json.dumps({'lons': sub_lons, 'lats': sub_lats, 'IDs': sub_IDs, 
                        'PJs': sub_PJs, 'urls': sub_urls})
 
-# prepare the subject data
-subject_data = ascii.read('jvh_subjects.csv', format='csv')
+@app.route('/backend/refresh-vortex-list/', methods=['GET'])
+def generate_new_vortex_export():
+    global lons, lats, PJs, urls, IDs, is_vortex
 
-for subject in tqdm.tqdm(subject_data):
-    try:
-        meta = ast.literal_eval(subject['metadata'])
-        lons.append(float(meta['longitude']))
-        lats.append(float(meta['latitude']))
-        PJs.append(int(meta['perijove']))
-        urls.append(ast.literal_eval(subject['locations'])["0"])
-        IDs.append(int(subject['subject_id']))
-    except KeyError as e:
-        continue
+    urls_loc        = []
+    lats_loc        = []
+    lons_loc        = []
+    PJs_loc         = []
+    IDs_loc         = []
+    is_vortex_loc   = []
 
-IDs, inds  = np.unique(np.asarray(IDs), return_index=True)
-lons = np.asarray(lons)[inds]
-lats = np.asarray(lats)[inds]
-PJs  = np.asarray(PJs)[inds]
-urls = np.asarray(urls)[inds]
+    # prepare the subject data
+    subject_data = ascii.read('jvh_subjects.csv', format='csv')
+
+    subject_IDs = np.unique(subject_data['subject_id'])
+
+    for subject_id in tqdm.tqdm(subject_IDs):
+        try:
+            datai = subject_data[subject_data['subject_id']==subject_id]
+
+
+            meta = ast.literal_eval(datai['metadata'][0])
+            lons_loc.append(float(meta['longitude']))
+            lats_loc.append(float(meta['latitude']))
+            PJs_loc.append(int(meta['perijove']))
+            urls_loc.append(ast.literal_eval(datai['locations'][0])["0"])
+            IDs_loc.append(int(subject_id))
+            
+            # save the info on whether this subject contains a vortex
+            # so we can filter in the frontend
+            if 105808 in np.unique(datai['subject_set_id']):
+                is_vortex_loc.append(True)
+            else:
+                is_vortex_loc.append(False)
+
+        except KeyError as e:
+            continue
+
+    IDs  = np.asarray(IDs_loc)
+    lons = np.asarray(lons_loc)
+    lats = np.asarray(lats_loc)
+    PJs  = np.asarray(PJs_loc)
+    urls = np.asarray(urls_loc)
+    is_vortex = np.asarray(is_vortex_loc)
+
+    print("Done", file=sys.stderr)
+
+    return "Done"
+
+generate_new_vortex_export()
 
 if __name__=='__main__':
     app.run(debug=True, port=5500)

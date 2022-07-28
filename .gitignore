@@ -156,3 +156,10 @@ dmypy.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# SSL keys
+*.pem
+
+# secrets
+panoptes_username
+panoptes_password

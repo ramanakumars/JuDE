@@ -163,6 +163,16 @@ div#filter-pj label {
 	width: 100%;
 }
 
+div#vortex_checkbox {
+	padding: 1em;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+div#vortex_checkbox input {
+
+}
+
 .multi-range-slider {
 	width: 100%;
 	border: 0px !important;

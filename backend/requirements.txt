@@ -1,0 +1,15 @@
+numpy
+matplotlib
+scipy
+scikit-image
+plotly
+flask
+flask_cors
+tqdm
+pandas
+astropy
+netCDF4
+panoptes_client
+gunicorn
+markupsafe==2.0.1
+git+https://github.com/zooniverse/panoptes-cli.git
