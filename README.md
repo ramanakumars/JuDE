@@ -3,32 +3,18 @@ JuDE is a React/Flask-based web app to explore the [Jovian Vortex Hunter](https:
 
 ## Building and running the docker container
 
-First, build both containers:
+Before starting the docker container, you will need to provide your Zooniverse username and password to the container, so that the updated subject data can be downloaded. This will be provided via two files (`panoptes_username` and `panoptes_password`):
 ```bash
-docker build -f Dockerfile.frontend .
-docker build -f Dockerfile.backend .
+echo [your zooniverse username] >> panoptes_username
+echo [your zooniverse password] >> panoptes_password
 ```
 
-Before running the app, you will need to download the subject data using the Panoptes client. You can install
-it using:
-```
-python3 -m pip install panoptescli
-```
-
-Configure your Zooniverse account:
-```
-panoptes configure
-```
-
-And then download the subject data:
-```
-cd backend/
-panoptes project download --generate --data-type subjects 17032 jvh_subjects.csv
-```
+Next, copy the SSL certificates (for the production version) to the repo main folder. This includes the certificate (`fullchain.pem`) and the private key (`privkey.pem`)
 
 Finally, start the docker using the `compose` command (from the main repo folder):
 ```bash
+docker-compose build
 docker-compose up
 ```
 
-This will start both the frontend and backend on `localhost:30000`.
+This will start both the frontend and backend on `localhost` (port 443). The backend will download the subject data from Panoptes, which will take time, so wait until you see the backend `gunicorn` server spin up.
