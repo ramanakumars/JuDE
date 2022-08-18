@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes,  Route, useParams } from "react-router-dom";
 import './main.css';
@@ -15,6 +15,9 @@ import scatter from './images/scatter.png';
 import hist from './images/hist.png';
 import tutorial from './images/tutorial_jude.png';
 import subject_viewer from './images/subject_viewer.png';
+
+import ReactGA from "react-ga4";
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -62,6 +65,7 @@ class Home extends React.Component {
 
 	render() {
         var data = [];
+
 
 		if(this.state.urls != null) {
 			for(var i=0; i<this.state.nimages; i++) {
@@ -148,15 +152,25 @@ class Home extends React.Component {
 	}
 }
 
-root.render(
-  <React.StrictMode>
-	  <BrowserRouter>
-		  <Routes>
-			  <Route exact path="/" element={<Home />} />
-			  <Route exact path="/explore" element={<ExplorerApp />} />
-			  <Route exact path="/subject/:id" element={<SubjectApp />} />
-		  </Routes>
-	  </BrowserRouter>
-  </React.StrictMode>
-);
 
+const App = () => {
+	useEffect(() => {
+		ReactGA.initialize("G-CS6MJNR2FM");
+		ReactGA.send({ hitType: "pageview", page: window.location.pathname + window.location.search });
+	}, []);
+
+
+	return (
+		<React.StrictMode>
+			<BrowserRouter>
+				<Routes>
+				  <Route exact path="/" element={<Home />} />
+				  <Route exact path="/explore" element={<ExplorerApp />} />
+				  <Route exact path="/subject/:id" element={<SubjectApp />} />
+				</Routes>
+			</BrowserRouter>
+		</React.StrictMode>
+	);
+}
+
+root.render(<App />);
