@@ -1,0 +1,27 @@
+version: "3.1"
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend.dev
+    image: jude-backend
+    secrets:
+      - panoptes_username
+      - panoptes_password
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.dev
+    image: jude-frontend
+    depends_on: 
+      - backend
+    volumes:
+      - ./frontend/:/app
+    ports:
+      - "3000:80"
+
+secrets:
+  panoptes_username:
+    file: ./panoptes_username
+  panoptes_password:
+    file: ./panoptes_password

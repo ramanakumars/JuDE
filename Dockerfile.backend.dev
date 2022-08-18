@@ -1,0 +1,28 @@
+FROM python:3.9
+WORKDIR /app
+
+# install python env
+COPY backend/requirements.txt ./
+RUN pip install -r ./requirements.txt
+
+# install cron
+RUN apt-get update && apt-get install -y cron
+
+# copy the image data
+COPY backend/PJimgs/ ./
+
+# create the cron job to fetch subject data
+COPY backend/refresh_subject_data.sh ./
+COPY backend/crontab /etc/cron.d/cjob
+RUN chmod 0644 /etc/cron.d/cjob
+RUN crontab /etc/cron.d/cjob
+RUN touch /var/log/cron.log
+
+# copy the flask app
+COPY backend/jvh_subjects.csv backend/backend_start.sh backend/app.py backend/download_subject_data.py backend/config.py /app/
+
+# run the gunicorn server
+ENV FLASK_ENV development
+EXPOSE 5000
+CMD ["./backend_start.sh"]
+
