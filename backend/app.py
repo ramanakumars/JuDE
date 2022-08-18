@@ -11,11 +11,13 @@ import tqdm
 import os
 import base64
 import io
+from contextlib import redirect_stdout
 import sys
 from skimage import io as skio
 import numpy as np
 import netCDF4 as nc
 from astropy.io import ascii
+from astropy.table import Table
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from flask_cors import CORS, cross_origin
 import plotly
@@ -80,20 +82,20 @@ def get_context_image(subject_id):
     lat = float(subject.metadata['latitude'])
     PJ  = int(subject.metadata['perijove'])
     lon = float(subject.metadata['longitude'])
-
-    img   = skio.imread(f'PJ{PJ}/globe_mosaic_highres.png')[::-1,:,:]
+    
+    img   = plt.imread(f'PJ{PJ}/globe_mosaic_highres.png')[::-1,:,:3]
     nroll = int(lon*25)
     lon0  = lon - nroll/25.
-
-    img_roll = np.roll(img, -nroll, axis=1)
 
     lons = np.linspace(-180, 180, 9000)
     lats = np.linspace(-90, 90, 4500)
 
-    lon_mask = (lons>lon0-30)&(lons<lon0+30)
-    lat_mask = (lats>lat-20)&(lats<lat+20)
+    lat_mask = (lats>lat-25)&(lats<lat+25)
+    img_roll = np.roll(img[lat_mask,:,:], -nroll, axis=1)
+    
+    lon_mask = (lons>lon0-25)&(lons<lon0+25)
 
-    img_sub = img_roll[lat_mask,:][:,lon_mask,:]
+    img_sub = img_roll[:,lon_mask,:]
     lon_sub = lons[lon_mask]
     lat_sub = lats[lat_mask]
 
@@ -110,23 +112,15 @@ def get_context_image(subject_id):
     dX[dY>3.5e6] = 1.e20
     dY[dX>3.5e6] = 1.e20
 
-
-    img_c_x = img_sub.shape[1]/2
-    img_c_y = img_sub.shape[0]/2
-
     # plot out the image and bounding box
     fig, ax = plt.subplots(1,1,dpi=50,facecolor='black')
-    ax.imshow(img_sub, origin='lower', extent=(lon_sub.min(), lon_sub.max(), lat_sub.min(), lat_sub.max()))
-    c1 = ax.contour(lon_sub, lat_sub, np.abs(dX), [3.5e6], colors='k', linewidths=0.75)
-    c2 = ax.contour(lon_sub, lat_sub, np.abs(dY), [3.5e6], colors='k', linewidths=0.75)
+    c1 = ax.contour(lon_sub, lat_sub, np.abs(dX), [3.5e6])
+    c2 = ax.contour(lon_sub, lat_sub, np.abs(dY), [3.5e6])
 
     c1vert0 = c1.collections[0].get_paths()[0].vertices
-    #c1vert1 = c1.collections[0].get_paths()[1].vertices
     c2vert0 = c2.collections[0].get_paths()[0].vertices
-    #c2vert1 = c2.collections[0].get_paths()[1].vertices
 
     plt.close()
-
 
     lon_sub = lon_sub + nroll/25.
     lon_sub[lon_sub > 180] -= 360.
@@ -137,7 +131,7 @@ def get_context_image(subject_id):
     c2vert0x = c2vert0[:,0] +  nroll/25.
     c2vert0x[c2vert0x > 180.] -= 360.
 
-    fig = px.imshow(img, x=lons, y=lats,#img_sub, x=lon_sub, y=lat_sub,
+    fig = px.imshow(img_sub, x=lon_sub, y=lat_sub,
                     labels={'x':'longitude', 'y': 'latitude'}, 
                     origin='lower', aspect='equal')
     fig.update_traces(hovertemplate='lon: %{x:4.2f}&deg;<br>lat: %{y:4.2f}&deg;', name='')
@@ -243,12 +237,20 @@ def create_plot():
 
         if metadata_key=='latitude':
             values = lats.tolist()
+            bins    = np.arange(-70, 70, 5).tolist()
+
         elif metadata_key=='longitude':
             values = lons.tolist()
+            bins    = np.arange(-180, 180, 10).tolist()
+
         elif metadata_key=='perijove':
             values = PJs.tolist()
+            bins    = np.arange(13, 36, 1).tolist()
 
-        output = {'x': values, 'type': plotly_type[plot_type]}
+        output = {'x': values, 'type': plotly_type[plot_type], 
+                  'xbins': {'start': min(bins), 'end': max(bins), 'size': (bins[1] - bins[0])},
+                  'nbinsx': len(bins),
+                  'marker': {'color': ['#2e86c1']*len(bins)}}
     else:
         layout['xaxis'] = {'title': meta_x}
         layout['yaxis'] = {'title': meta_y}
@@ -267,7 +269,9 @@ def create_plot():
         elif meta_y=='perijove':
             y = PJs.tolist()
 
-        output = {'x': x, 'y': y, 'mode': 'markers', 'type': plotly_type[plot_type]}
+        output = {'x': x, 'y': y, 'mode': 'markers', 'type': plotly_type[plot_type],
+                  'marker': {'color': ['dodgerblue']*len(x)}
+                  }
 
 
     return json.dumps({'data': output, 'layout': layout, 'subject_urls': urls.tolist(), 
@@ -294,6 +298,31 @@ def get_rand_imgs():
     return json.dumps({'lons': sub_lons, 'lats': sub_lats, 'IDs': sub_IDs, 
                        'PJs': sub_PJs, 'urls': sub_urls})
 
+
+@app.route('/backend/create-export/', methods=['POST'])
+def create_export():
+    if request.method=='POST':
+        subjects = request.json['subject_IDs']
+    else:
+        return json.dumps({'error': 'error! request failed'})
+
+    subject_data = ascii.read('jvh_subjects.csv', format='csv')
+
+    subject_data.remove_rows(np.where(subject_data['subject_id']==105808)[0])
+
+    export_table = Table(subject_data[0:0])
+
+    for subject_id in subjects:
+        datai = subject_data[(subject_data['subject_id']==subject_id)&(subject_data['subject_set_id']!=105808)]
+        for row in datai:
+            export_table.add_row(row)
+
+    outfile = io.StringIO()        
+    export_table.write(outfile, format='csv')
+    output = outfile.getvalue()
+
+    return json.dumps({'filedata': output})
+
 @app.route('/backend/refresh-vortex-list/', methods=['GET'])
 def generate_new_vortex_export():
     global lons, lats, PJs, urls, IDs, is_vortex
@@ -307,6 +336,7 @@ def generate_new_vortex_export():
 
     # prepare the subject data
     subject_data = ascii.read('jvh_subjects.csv', format='csv')
+                                                                    
 
     subject_IDs = np.unique(subject_data['subject_id'])
 

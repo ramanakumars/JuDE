@@ -11,6 +11,9 @@ const var_names = {
 
 const variables = {Latitude: 'latitude', Longitude: 'longitude', Perijove: 'perijove'};
 
+const blue = '#2e86c1';
+const red  = '#922b21';
+
 
 class Explorer extends React.Component {
 	/* 
@@ -72,7 +75,7 @@ class Explorer extends React.Component {
 				// layout parameters for the Plotly element
                 var layout = plotly_meta.layout;
                 layout['hovermode'] = 'closest';
-                layout['width'] = 800;
+                layout['width'] = 1200;
                 layout['height'] = 600;
 
 
@@ -192,10 +195,12 @@ class PlotContainer extends React.Component {
 		
 		// duplicate the plotly structure
 		for (var key in this.state.data) {
-			if ((key!='x')||(key!='y')) {
+			if ((key!=='x')||(key!=='y')) {
 				data[key] = this.state.data[key];
 			}
 		}
+
+		data.marker.color = new Array(data.marker.color.length).fill(blue); 
 
 		// create the same set of variables as the original plot
 		data.x = [];
@@ -261,20 +266,18 @@ class PlotContainer extends React.Component {
 						handleHover={this.handleHover}
 						handleSelect={this.handleSelect}
 					/>
-					<div id='hover-image'>
-						<SubjectImages variables={[]} 
-							render_type={'hover'} 
-							subject_urls={null} subject_lats={null} subject_lons={null}
-							subject_IDs={null} subject_PJs={null}
-							ref={this.hover_images} /> 
-					</div>
 				</section>
 				<section id='images-container'>
-        			<SubjectImages 
+					<SubjectImages 
 						variables={[]} render_type={'selection'} 
 						subject_urls={null} subject_lats={null} subject_lons={null}
 						subject_IDs={null} subject_PJs={null}
 						ref={this.subject_images} />
+					<SubjectImages variables={[]} 
+						render_type={'hover'} 
+						subject_urls={null} subject_lats={null} subject_lons={null}
+						subject_IDs={null} subject_PJs={null}
+						ref={this.hover_images} /> 
 				</section>
 
 			</section>
@@ -472,6 +475,7 @@ class SubjectPlotter extends React.Component {
         this.handleHover    = this.handleHover.bind(this);
         this.handleSelect   = this.handleSelect.bind(this);
         this.resetSelection = this.resetSelection.bind(this);
+		this.plot           = React.createRef();
     }
 
     handleHover(event_data) {
@@ -491,22 +495,41 @@ class SubjectPlotter extends React.Component {
 		*/
 		var data = { urls: [], lons: [], lats: [], IDs: [], PJs: [] };
         if(this.state.plot_name==='hist') {
+			var binNumber = [];
             for(var i=0; i < event_data.points[0].pointNumbers.length; i++){
                 data.urls.push(this.state.subject_urls[event_data.points[0].pointNumbers[i]]);
                 data.lons.push(this.state.subject_lons[event_data.points[0].pointNumbers[i]]);
                 data.lats.push(this.state.subject_lats[event_data.points[0].pointNumbers[i]]);
                 data.IDs.push(this.state.subject_IDs[event_data.points[0].pointNumbers[i]]);
                 data.PJs.push(this.state.subject_PJs[event_data.points[0].pointNumbers[i]]);
+				binNumber.push(event_data.points[0].binNumber);
             };
+
+			binNumber = [...new Set(binNumber) ];
+
+			// change the bin corresponding to the hover data
+			var colors = new Array(this.state.data[0].marker.color.length).fill(blue); 
+			for (i=0; i < binNumber.length; i++) {
+				colors[binNumber[i]] = red;
+			}
+
+
         } else if(this.state.plot_name==='scatter') {
+			var colors = new Array(this.state.data[0].x.length).fill(blue); 
             for(i=0; i < event_data.points.length; i++){
                 data.urls.push(this.state.subject_urls[event_data.points[i].pointNumber]);
                 data.lons.push(this.state.subject_lons[event_data.points[i].pointNumber]);
                 data.lats.push(this.state.subject_lats[event_data.points[i].pointNumber]);
                 data.IDs.push(this.state.subject_IDs[event_data.points[i].pointNumber]);
                 data.PJs.push(this.state.subject_PJs[event_data.points[i].pointNumber]);
+				colors[event_data.points[i].pointNumber] = red;
             };
         }
+
+		var state_data = this.state.data[0];
+		state_data.marker.color = colors;
+		this.setState({'data': [state_data]});
+
 		
 		this.props.handleHover(data);
 
@@ -520,13 +543,15 @@ class SubjectPlotter extends React.Component {
 
 		var data = { urls: [], lons: [], lats: [], IDs: [], PJs: [] };
         if(this.state.plot_name==='hist') {
-            for(var i=0; i < event_data.points[0].pointNumbers.length; i++){
-                data.urls.push(this.state.subject_urls[event_data.points[0].pointNumbers[i]]);
-                data.lons.push(this.state.subject_lons[event_data.points[0].pointNumbers[i]]);
-                data.lats.push(this.state.subject_lats[event_data.points[0].pointNumbers[i]]);
-                data.IDs.push(this.state.subject_IDs[event_data.points[0].pointNumbers[i]]);
-                data.PJs.push(this.state.subject_PJs[event_data.points[0].pointNumbers[i]]);
-            };
+			for(var j=0; j < event_data.points.length; j++) {
+				for(var i=0; i < event_data.points[j].pointNumbers.length; i++){
+					data.urls.push(this.state.subject_urls[event_data.points[j].pointNumbers[i]]);
+					data.lons.push(this.state.subject_lons[event_data.points[j].pointNumbers[i]]);
+					data.lats.push(this.state.subject_lats[event_data.points[j].pointNumbers[i]]);
+					data.IDs.push(this.state.subject_IDs[event_data.points[j].pointNumbers[i]]);
+					data.PJs.push(this.state.subject_PJs[event_data.points[j].pointNumbers[i]]);
+				};
+			};
         } else if(this.state.plot_name==='scatter') {
             for(i=0; i < event_data.points.length; i++){
                 data.urls.push(this.state.subject_urls[event_data.points[i].pointNumber]);
@@ -543,15 +568,35 @@ class SubjectPlotter extends React.Component {
     }
 
 	resetSelection() {
-		this.images.setState({subject_urls: this.state.subject_urls, page: 0});
+		var data = { urls: [], lons: [], lats: [], IDs: [], PJs: [] };
+        if(this.state.plot_name==='hist') {
+            for(var i=0; i < this.state.subject_urls.length; i++){
+                data.urls.push(this.state.subject_urls[i]);
+                data.lons.push(this.state.subject_lons[i]);
+                data.lats.push(this.state.subject_lats[i]);
+                data.IDs.push(this.state.subject_IDs[i]);
+                data.PJs.push(this.state.subject_PJs[i]);
+            };
+        } else if(this.state.plot_name==='scatter') {
+            for(i=0; i < this.state.subject_urls.length; i++){
+                data.urls.push(this.state.subject_urls[i]);
+                data.lons.push(this.state.subject_lons[i]);
+                data.lats.push(this.state.subject_lats[i]);
+                data.IDs.push(this.state.subject_IDs[i]);
+                data.PJs.push(this.state.subject_PJs[i]);
+            };
+        }
+		
+		this.props.handleSelect(data);
 	}
 
     render() {
 			if (this.state.data != null) {
 				return (
 					<div id='plot'>
-						<Plot data={this.state.data} layout={this.state.layout}
-							onHover={this.handleHover} onSelected={this.handleSelect} onDeselect={this.resetSelection} />
+						<Plot ref={this.plot} data={this.state.data} layout={this.state.layout}
+							onHover={this.handleHover} onSelected={this.handleSelect} 
+							onDeselect={this.resetSelection} />
 					</div>
 				)
 			} else {
@@ -568,10 +613,7 @@ class SubjectImages extends React.Component {
     constructor(props) {
         super(props);
         // this.state = {};
-		var nmax = 24;
-        if(props.render_type==='hover') {
-            nmax = 6;
-        }
+		var nmax = 16;
 
         this.state = {
             variables: props.variables, 
@@ -588,8 +630,9 @@ class SubjectImages extends React.Component {
         
 		this.npages = 1;
 
-		this.prevPage = this.prevPage.bind(this);
-		this.nextPage = this.nextPage.bind(this);
+		this.prevPage  = this.prevPage.bind(this);
+		this.nextPage  = this.nextPage.bind(this);
+		this.getExport = this.getExport.bind(this);
     }
 
 	prevPage(e) {
@@ -609,6 +652,47 @@ class SubjectImages extends React.Component {
 			this.setState({page: this.state.page + 1});
 		}
 		return false;
+	}
+
+	getExport(e) {
+		var postdata = {subject_IDs: this.state.subject_IDs};
+
+		// send to the backend
+		fetch('/backend/create-export/', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+			// the input/output are in JSON format
+			body: JSON.stringify(postdata)
+        }).then( result => result.json()).then( data => {
+			if (!data.error) {
+				// create a link holding the file download
+				const element = document.createElement('a');
+
+				// save the file blob
+				const file = new Blob([data.filedata], {
+					type: "text/csv"
+				});
+
+				// save the link attributes
+				element.href     = URL.createObjectURL(file);
+				element.download = 'subject_export.csv';
+
+				// append to body (for Firefox)
+				document.body.appendChild(element);
+
+				// click on the link to download the file
+				element.click();
+
+				// cleanup
+				element.remove();
+            } else {
+                
+            }
+        });
+		
 	}
 
     render() {
@@ -634,9 +718,10 @@ class SubjectImages extends React.Component {
         }
 
         var style = {};
-        if(( subject_data.length > 1 )&(this.state.render_type==='hover')) {
-            style = {width: '28%'};
-        }
+
+		if (this.state.subject_urls.length < 1) {
+			return null;
+		}
 
 		var rand_key = Math.random();
 
@@ -651,6 +736,10 @@ class SubjectImages extends React.Component {
 					<SubjectImage key={data.ID+"_"+this.state.render_type} lon={data.lon} lat={data.lat} ID={data.ID} PJ={data.PJ} url={data.url} style={style} />
 				))
 				}
+
+				<div className='subject-export-container'>
+					<button onClick={this.getExport}>Export subjects</button>
+				</div>
             </div>
         )
     }
