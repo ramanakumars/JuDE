@@ -19,7 +19,7 @@ RUN crontab /etc/cron.d/cjob
 RUN touch /var/log/cron.log
 
 # copy the flask app
-COPY backend/backend_start.sh backend/app.py backend/download_subject_data.py backend/config.py /app/
+COPY backend/jvh_subjects.csv backend/backend_start.sh backend/app.py backend/download_subject_data.py backend/config.py /app/
 
 # run the gunicorn server
 ENV FLASK_ENV production
