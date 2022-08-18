@@ -2,9 +2,10 @@ import os
 import yaml
 from app import generate_new_vortex_export
 
+workers = 2
+threads = 4
 worker_class = 'sync'
-worker_connections = 100
-timeout = 30
+timeout = 120
 keepalive = 2
 
 def on_starting(worker):
