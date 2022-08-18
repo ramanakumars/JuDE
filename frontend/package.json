@@ -11,6 +11,7 @@
     "plotly.js": "^2.12.1",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
+    "react-ga4": "^1.4.1",
     "react-plotly.js": "^2.5.1",
     "react-router-dom": "^6.3.0",
     "react-scripts": "^5.0.1",
