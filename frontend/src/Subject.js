@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import Plot from 'react-plotly.js';
-import Loading from './Loading.js'
+import LoadingPage from './LoadingPage.js'
 import MainNav from './Nav.js';
 
 class Subject extends React.Component {
@@ -13,9 +13,14 @@ class Subject extends React.Component {
 		this.subject_viewer = React.createRef();
 		this.context_viewer = React.createRef();
 		this.globe_viewer = React.createRef();
+		this.loadingdiv = React.createRef();
 
+		this.doneLoading = this.doneLoading.bind(this);
 	}
 
+	doneLoading() {
+		this.loadingdiv.current.disable();	
+	}
 
 	render() {
 		document.title = 'JuDE: Subject ' + this.state.subject_id;
@@ -23,12 +28,15 @@ class Subject extends React.Component {
 			<article id='main'>
 				<MainNav />
 				<section id='app'>
+					<LoadingPage ref={this.loadingdiv} enable={true} />
 					<section id='subject-info'>
 						<SubjectViewer  subject_id={this.state.subject_id} ref={this.subject_viewer}/>
-						<SubjectMosaicContextViewer subject_id={this.state.subject_id} type='global' ref={this.globe_viewer} />
+						<SubjectMosaicContextViewer subject_id={this.state.subject_id} 
+							type='global' ref={this.globe_viewer} />
 					</section>
 					<section id="plotter">
-						<SubjectContextViewer subject_id={this.state.subject_id} type='context' ref={this.context_viewer} />
+						<SubjectContextViewer subject_id={this.state.subject_id} 
+							type='context' ref={this.context_viewer} onMount={this.doneLoading} />
 					</section>
 				</section>
 			</article>
@@ -51,7 +59,6 @@ class SubjectViewer extends React.Component {
 
 		var url, latitude, longitude, PJ;
 
-		this.loadingdiv.current.setState({enabled: true});
 		// send the data to Flask
 		await axios.request(post_url, {
 			method: 'GET',
@@ -70,7 +77,6 @@ class SubjectViewer extends React.Component {
 		});
 
 		this.setState({'url': url, 'PJ': PJ, 'latitude': latitude, 'longitude': longitude});
-		this.loadingdiv.current.setState({enabled: false});
 
 	}
 
@@ -78,7 +84,6 @@ class SubjectViewer extends React.Component {
 		if(this.state.url != null) {
 			return (
 				<section className='subject-image'>
-					<Loading ref={this.loadingdiv} />
 					<h2>Subject {this.state.subject_id } </h2>
 					<img src={this.state.url} alt={this.state.subject_id} />
 					<section id='subject-metadata'>
@@ -100,7 +105,7 @@ class SubjectViewer extends React.Component {
 		} else {
 			return (
 				<section className='subject-image'>
-					<Loading ref={this.loadingdiv} />
+					&nbsp;
 				</section>
 			)
 		}
@@ -112,15 +117,10 @@ class SubjectContextViewer extends React.Component {
         super(props);
 		this.state = {subject_id: props.subject_id, type: props.type, url: props.url, 
 			plotly_data: props.plotly_data};
-
-		this.loadingdiv = React.createRef();
     }
 	
 	async componentDidMount() {
 
-		if(this.loadingdiv.current != null) {
-			this.loadingdiv.current.setState({enabled: true});
-		}
 		var post_url;
 		if (this.state.type==='context') {
 			post_url = '/backend/get-context-image/' + this.state.subject_id;
@@ -143,10 +143,9 @@ class SubjectContextViewer extends React.Component {
 			this.setState({plotly_data: data});
 		});
 
-		if(this.loadingdiv.current!=null) {
-			this.loadingdiv.current.setState({enabled: false});
+		if (this.props.onMount!=null) {
+			this.props.onMount();
 		}
-
 	}
 
     render() {
@@ -162,9 +161,8 @@ class SubjectContextViewer extends React.Component {
 		} else {
 			return (
 				<section className='subject-image'>
-					<Loading ref={this.loadingdiv} />
 				</section>
-			)
+			);
 		}
     }
 }

@@ -105,33 +105,6 @@ input[type=submit]:hover {
     /* color: var(--bright-text); */
 }
 
-
-div.noloading {
-	display: none;
-}
-
-div.loading {
-	background-color: black;
-	opacity: 0.5;
-}
-
-div.loadingspin {
-    /* display: none; */
-    margin: auto;
-    /* border: 0.75rem solid var(--primary);  */
-    border-top: 0.75rem solid var(--secondary); 
-    border-bottom: 0.75rem solid var(--secondary); 
-    border-radius: 50%;
-    width: 2.5rem;
-    height: 2.5rem;
-    animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
 label.radio {
     padding: 0.25em 0.75em;
 	min-height: 3em;
