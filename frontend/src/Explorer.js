@@ -104,6 +104,7 @@ class Explorer extends React.Component {
 	}
 
 	render() {
+		document.title = 'JuDE explorer'
 		return (
 			<article id='main'>
 				<MainNav />
@@ -433,7 +434,7 @@ class SubsetPJ extends React.Component {
 class VortexSelector extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {checked: false};
+		this.state = {checked: true};
 
 		this.handleInput = this.handleInput.bind(this);
 	}
@@ -447,7 +448,8 @@ class VortexSelector extends React.Component {
 	render() {
 		return (
 			<div id="vortex_checkbox">
-				<input type="checkbox" name="vortex_only" id="vortex_only" onChange={this.handleInput} />
+				<input type="checkbox" name="vortex_only" id="vortex_only" 
+					onChange={this.handleInput} checked={this.state.checked}/>
 				<label for="vortex_only">Show vortices only </label>
 			</div>
 		)
@@ -479,20 +481,6 @@ class SubjectPlotter extends React.Component {
     }
 
     handleHover(event_data) {
-		/*
-        var urls = [];
-        if(this.state.plot_name==='hist') {
-            for(var i=0; i < data.points[0].pointNumbers.length; i++){
-                urls.push(this.state.subject_urls[data.points[0].pointNumbers[i]]);
-            };
-        } else if(this.state.plot_name==='scatter') {
-            for(i=0; i < data.points.length; i++){
-                urls.push(this.state.subject_urls[data.points[i].pointNumber]);
-            };
-        }
-
-		this.props.handleHover(urls);
-		*/
 		var data = { urls: [], lons: [], lats: [], IDs: [], PJs: [] };
         if(this.state.plot_name==='hist') {
 			var binNumber = [];
@@ -532,8 +520,6 @@ class SubjectPlotter extends React.Component {
 
 		
 		this.props.handleHover(data);
-
-		//this.hoverimage.setState({subject_urls: urls, page: 0});
     }
     
 	handleSelect(event_data) {

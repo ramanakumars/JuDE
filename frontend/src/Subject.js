@@ -18,6 +18,7 @@ class Subject extends React.Component {
 
 
 	render() {
+		document.title = 'JuDE: Subject ' + this.state.subject_id;
 		return (
 			<article id='main'>
 				<MainNav />
