@@ -1,4 +1,5 @@
 import React from 'react';
+import './loading.css';
 
 class Loading extends React.Component {
 	constructor(props) {
@@ -10,14 +11,14 @@ class Loading extends React.Component {
 	render() {
 		if (this.state.enabled===false) {
 			return (
-				<div className="notloading">
+				<div className="not-loading">
 					&nbsp;
 				</div>
 			)
 		} else {
 			return (
-				<div className="notloading">
-					<div className="loadingspin">
+				<div className="not-loading">
+					<div className="loading-spin">
 						&nbsp;
 					</div>
 				</div>

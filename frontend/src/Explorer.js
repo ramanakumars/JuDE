@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import MainNav from './Nav.js';
 import SubjectImage from './SubjectImage.js';
 import MultiRangeSlider from "multi-range-slider-react";
+import LoadingPage from './LoadingPage.js';
 
 const var_names = {
     hist: ['x'],
@@ -36,6 +37,7 @@ class Explorer extends React.Component {
 		// filter will handle the slider for perijove filtering and 
 		// "vortex only" selection
 		this.filter = this.filter.bind(this);
+
 	}
 
 	handleSubmit(event) {
@@ -619,6 +621,8 @@ class SubjectImages extends React.Component {
 		this.prevPage  = this.prevPage.bind(this);
 		this.nextPage  = this.nextPage.bind(this);
 		this.getExport = this.getExport.bind(this);
+		
+		this.loading_page     = React.createRef();
     }
 
 	prevPage(e) {
@@ -642,6 +646,9 @@ class SubjectImages extends React.Component {
 
 	getExport(e) {
 		var postdata = {subject_IDs: this.state.subject_IDs};
+
+
+		this.loading_page.current.enable();
 
 		// send to the backend
 		fetch('/backend/create-export/', {
@@ -674,10 +681,12 @@ class SubjectImages extends React.Component {
 
 				// cleanup
 				element.remove();
+				this.loading_page.current.disable();
             } else {
                 
             }
         });
+		
 		
 	}
 
@@ -726,6 +735,7 @@ class SubjectImages extends React.Component {
 				<div className='subject-export-container'>
 					<button onClick={this.getExport}>Export subjects</button>
 				</div>
+				<LoadingPage ref={this.loading_page} enable={false}/>
             </div>
         )
     }
