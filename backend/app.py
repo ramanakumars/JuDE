@@ -8,7 +8,6 @@ import io
 import datetime
 import sys
 import numpy as np
-import netCDF4 as nc
 from astropy.io import ascii
 from astropy.table import Table
 from flask_cors import CORS
@@ -22,7 +21,7 @@ re = 71492e3
 rp = re*(1 - flat)
 pixres = 25./np.radians(1)
 
-# empty list to hold values from subject 
+# empty list to hold values from subject
 # metadata import
 urls = []
 lats = []
@@ -84,12 +83,12 @@ def get_context_image(subject_id):
     # load the subject image
     img = plt.imread(f'PJ{PJ}/globe_mosaic_highres.png')[::-1, :, :3]
 
-    # roll the longitude axis so that the subject 
+    # roll the longitude axis so that the subject
     # is in the center of the mosaic
     nroll = int(lon*25)
     lon0 = lon - nroll/25.
 
-    # create a grid of lat/lon values so that 
+    # create a grid of lat/lon values so that
     # we can draw a contour of lat/lon showing the subject
     # edges
     lons = np.linspace(-180, 180, 9000)
@@ -192,7 +191,7 @@ def get_mosaic_image(subject_id):
     x = np.linspace(-180, 180, img_globe.shape[1])
     y = np.linspace(-90, 90, img_globe.shape[0])
 
-    # plot out the mosaic with the center of the subject 
+    # plot out the mosaic with the center of the subject
     # as an 'X'
     fig = px.imshow(img_globe[::-1, :], x=x, y=y,
                     labels={'x': 'longitude', 'y': 'latitude'},
@@ -231,7 +230,7 @@ def create_plot():
             meta_y = request.json['y']
 
     layout = {}
-    if plot_type=='hist':
+    if plot_type == 'hist':
         # for histogram, there is only one axis
         layout['xaxis'] = {'title': metadata_key}
 
@@ -255,7 +254,7 @@ def create_plot():
                             'size': (bins[1] - bins[0])},
                   'nbinsx': len(bins),
                   'marker': {'color': ['#2e86c1']*len(bins)}}
-    elif plot_type=='scatter':
+    elif plot_type == 'scatter':
         # repeat for scatter, but now there are two variables
         layout['xaxis'] = {'title': meta_x}
         layout['yaxis'] = {'title': meta_y}
@@ -322,7 +321,7 @@ def create_export():
     # open the subject data CSV
     subject_data = ascii.read('jvh_subjects.csv', format='csv')
 
-    # create a clone of the table that we can fill in 
+    # create a clone of the table that we can fill in
     export_table = Table(subject_data[0:0])
 
     # for each requested subject, add the metadata from the CSV file
@@ -344,7 +343,7 @@ def create_export():
 @app.route('/backend/refresh-vortex-list/', methods=['GET'])
 def generate_new_vortex_export():
     '''
-        Automated job that refreshes the subject data to 
+        Automated job that refreshes the subject data to
         get the new list of vortices
     '''
     global lons, lats, PJs, urls, IDs, is_vortex
@@ -359,11 +358,12 @@ def generate_new_vortex_export():
     # prepare the subject data
     subject_data = ascii.read('jvh_subjects.csv', format='csv')
 
+    subject_ID_list = np.asarray(subject_data['subject_id'])
     subject_IDs = np.unique(subject_data['subject_id'])
 
     for subject_id in tqdm.tqdm(subject_IDs):
         try:
-            datai = subject_data[subject_data['subject_id'] == subject_id]
+            datai = subject_data[np.where(subject_ID_list == subject_id)[0]]
 
             meta = ast.literal_eval(datai['metadata'][0])
             lons_loc.append(float(meta['longitude']))
@@ -391,6 +391,7 @@ def generate_new_vortex_export():
     print(f"Done {datetime.datetime.now()}", file=sys.stderr)
 
     return "Done"
+
 
 # refresh the subject list on startup
 generate_new_vortex_export()
