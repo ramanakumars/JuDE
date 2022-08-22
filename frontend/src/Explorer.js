@@ -196,6 +196,10 @@ class PlotContainer extends React.Component {
 		 */
 		var urls = []; var lats = []; var lons = []; var IDs = []; var PJs = []; var data = {};
 		
+		if (this.state === null) {
+			return null;
+		}
+
 		// duplicate the plotly structure
 		for (var key in this.state.data) {
 			if ((key!=='x')||(key!=='y')) {
