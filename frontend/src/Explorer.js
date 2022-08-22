@@ -442,8 +442,11 @@ class VortexSelector extends React.Component {
 	}
 
 	handleInput(e) {
-		this.setState({checked: !this.state.checked});
-		this.props.onChange(e);
+		this.setState({checked: !this.state.checked}, 
+			function() { 
+				this.props.onChange(e)
+			}
+		);
 	}
 
 	render() {
