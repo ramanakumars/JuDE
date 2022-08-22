@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend.dev
+      dockerfile: ./docker/Dockerfile.backend.dev
     image: jude-backend
     secrets:
       - panoptes_username
@@ -11,7 +11,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend.dev
+      dockerfile: ./docker/Dockerfile.frontend.dev
     image: jude-frontend
     depends_on: 
       - backend
