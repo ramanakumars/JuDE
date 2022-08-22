@@ -322,14 +322,28 @@ def create_export():
     subject_data = ascii.read('jvh_subjects.csv', format='csv')
 
     # create a clone of the table that we can fill in
-    export_table = Table(subject_data[0:0])
+    export_table = Table(names=('subject_id', 'latitude', 'longitude',
+                                'perijove', 'location',
+                                'classification_count', 'retired_at',
+                                'retirement_reason'),
+                         dtype=('i8', 'f8', 'f8', 'i8', 'U40', 'i8',
+                                'U40', 'U40'))
 
     # for each requested subject, add the metadata from the CSV file
     for subject_id in subjects:
         datai = subject_data[(subject_data['subject_id'] == subject_id) & (
             subject_data['subject_set_id'] != 105808)]
         for row in datai:
-            export_table.add_row(row)
+            meta = ast.literal_eval(row[4])
+
+            latitude = float(meta['latitude'])
+            longitude = float(meta['longitude'])
+            perijove = int(meta['perijove'])
+
+            location = ast.literal_eval(row[5])["0"]
+
+            export_table.add_row([row[0], latitude, longitude, perijove,
+                                  location, row[6], row[7], row[8]])
 
     # save it out to CSV-like string so we can send it to the frontend
     # to package it and submit for download
