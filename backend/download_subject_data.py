@@ -1,8 +1,4 @@
 from panoptes_client import Panoptes, Project
-from panoptes_client.panoptes import PanoptesAPIException
-import os
-from astropy.io import ascii
-from astropy.io.ascii.core import InconsistentTableError
 
 with open('/run/secrets/panoptes_username') as ufile:
     username = ufile.read().strip()
