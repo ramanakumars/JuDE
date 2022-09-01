@@ -21,7 +21,9 @@ section.apptitle {
 }
 
 section.nav {
-	display: block; 
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
 }
 
 a.nav {
@@ -37,4 +39,89 @@ a.nav {
 
 a.nav:hover {
 	border-bottom: 3px solid var(--primary);
+}
+
+section.help {
+	color: var(--bright-text);
+	margin: 1.5em;
+	position: relative;
+}
+
+section.help a {
+	color: var(--bright-text);
+}
+
+section.help a:hover {
+	color: var(--secondary);
+}
+
+section.helptext-container {
+	display: block;
+
+	height: 600px;
+	width: 45em;
+	
+	position: absolute;
+	top: 50px;
+	left: -35em;
+
+	background: white;
+	border-radius: 1em;
+	border: 0.25em solid var(--dark);
+
+	padding: 0.5em 0em;
+
+	z-index: 5;
+
+	color: var(--dark-text);
+}
+
+section.helptext {
+	overflow-y: scroll;
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
+}
+
+section.helptext a {
+	color: var(--primary);
+	text-decoration: none;
+}
+
+section.helptext a:hover {
+	color: var(--dark);
+}
+
+section.helptext {
+	padding: 0.75em;
+}
+
+section.helptext img {
+	width: 100%;
+	margin: 0.25em;
+	box-sizing: border-box;
+}
+
+section.helptext-container::before, section.helptext-container::after {
+	content: ' ';
+	display: block;
+	border-style: solid;
+	border-width: 0 1em 1.5em 1em;
+	border-color: transparent;
+	position: absolute;
+	left: 34.5em;
+}
+
+section.helptext-container::before {
+	top: -1.75em;
+	border-bottom-color: var(--dark);
+}
+
+section.helptext-container::after {
+	top: -1.5em;
+	border-bottom-color: white;
+}
+
+section.helptext li {
+	margin: 0.25em;
 }
