@@ -22,7 +22,7 @@ class MainNav extends React.Component {
 
 				<section className='feedback-container'>
 					We'd love to hear your thoughts! If you have a few minutes, please provide 
-					feedback on JuDE <a href="/feedback/">here!</a>
+					feedback on JuDE <a href="https://umn.qualtrics.com/jfe/form/SV_8qYD90HcNJCcuO2">here!</a>
 				</section>
 
 				<section className='nav'>
