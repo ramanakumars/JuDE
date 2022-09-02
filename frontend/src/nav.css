@@ -12,12 +12,28 @@ nav#mainnav {
 }
 
 section.apptitle {
-	width: 40%;
+	width: 5em;
 	display: block;
 	color: var(--bright-text);
 	padding: 0.15em 1em;
 	font-size: 1.5em;
 	font-weight: 700;
+}
+
+section.feedback-container {
+	width: 70em;
+	text-align: center;
+	color: var(--bright-text);
+}
+
+section.feedback-container a {
+	color: var(--secondary);
+	text-decoration: none;
+}
+
+section.feedback-container a:hover {
+	color: var(--tertiary);
+	text-decoration: underline;
 }
 
 section.nav {

@@ -20,6 +20,11 @@ class MainNav extends React.Component {
 					JuDE
 				</section>
 
+				<section className='feedback-container'>
+					We'd love to hear your thoughts! If you have a few minutes, please provide 
+					feedback on JuDE <a href="/feedback/">here!</a>
+				</section>
+
 				<section className='nav'>
 					{ ((this.state.target=="explore")||(this.state.target=="subject")) &&
 						<Help target={this.state.target} />
@@ -97,20 +102,20 @@ const subjectHelpText = () => {
 
 				<ol>
 					<li>
-						On the left panel, you will see the subject image
-						as seen during classification, followed by the associated metadata. 
+						On the left panel, you will see the <b>subject image</b>
+						as seen during classification, followed by the <b>associated metadata</b>. 
 					</li>
 				
 					<li>
 						Below this, there is a map 
-						showing the mosaic of all images from this perijove, and 
-						the location of this subject. 
+						showing the <b>mosaic of all images from this perijove</b>, and 
+						the <b>location of this subject</b>. 
 					</li>
 
 					<li>
-						On the right, you will see an interactive window which shows a 
+						On the right, you will see an <b>interactive window</b> which shows a 
 						small segment of this mosaic, centered on the subject. The black outline 
-						shows the edge of the subject on the mosaic (note that this outline will be 
+						shows the <b>edge of the subject on the mosaic</b> (note that this outline will be 
 						very curved near the polar regions, since the physical spacing between longitude lines 
 						will shrink).
 					</li>
@@ -135,8 +140,13 @@ const exploreHelpText = () => {
 			<p>
 				The exploration page contains four elements. To illustrate the different options available
 				on this page, please watch this overview:
+			</p>
 
-				<b>VIDEO COMES HERE</b>
+			<p>
+				<iframe width="100%" height="315" src="https://www.youtube.com/embed/ttDVrAhwHh8" 
+					title="YouTube video player" frameborder="0" 
+					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+					allowfullscreen></iframe>
 			</p>
 
 			<p>
