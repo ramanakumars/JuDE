@@ -125,9 +125,8 @@ class Home extends React.Component {
 
 						<p>
 							In both plots, hovering over each plot element shows a preview of the 
-							corresponding subject(s) on the right. You can also see a preview of all subjects
-							in the bottom panel. You can use the lasso or box selection tool to filter 
-							the subjects shown in the bottom.
+							corresponding subject(s) on the bottom right. You can use the lasso or 
+							box selection tool to filter the subjects shown in the bottom left box.
 						</p>
 						
 						<img src={tutorial} />
