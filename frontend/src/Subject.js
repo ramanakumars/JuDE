@@ -26,7 +26,7 @@ class Subject extends React.Component {
 		document.title = 'JuDE: Subject ' + this.state.subject_id;
 		return (
 			<article id='main'>
-				<MainNav />
+				<MainNav target="subject"/>
 				<section id='app'>
 					<LoadingPage ref={this.loadingdiv} enable={true} />
 					<section id='subject-info'>

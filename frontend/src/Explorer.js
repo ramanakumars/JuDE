@@ -109,7 +109,7 @@ class Explorer extends React.Component {
 		document.title = 'JuDE explorer'
 		return (
 			<article id='main'>
-				<MainNav />
+				<MainNav target='explore'/>
 				<section id='app'>
 					<section id='plot-info'>
 						<ChoosePlotType ref={this.choose_plot_form} onSubmit={this.handleSubmit}/>
