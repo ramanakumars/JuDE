@@ -14,6 +14,8 @@ from flask_cors import CORS
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
+import fcntl as F
+import os
 
 
 # jupiter's parameters for projection
@@ -279,8 +281,10 @@ def create_plot():
                   'marker': {'color': ['dodgerblue']*len(x)}
                   }
 
-    with open('is_vortex.json', 'r') as infile:
-        is_vortex = json.load(infile)
+    with open('is_vortex.json.lock', 'w') as lockfile:
+        F.flock(lockfile.fileno(), F.LOCK_SH)
+        with open('is_vortex.json', 'r') as infile:
+            is_vortex = json.load(infile)
 
     return json.dumps({'data': output, 'layout': layout,
                        'subject_urls': urls.tolist(),
@@ -396,6 +400,8 @@ def generate_new_vortex_export():
     PJs = np.asarray(PJs_loc)
     urls = np.asarray(urls_loc)
 
+    update_vortex_list()
+
     print(f"Done {datetime.datetime.now()}", file=sys.stderr)
 
     return "Done"
@@ -415,8 +421,10 @@ def update_vortex_list():
     for subject in tqdm.tqdm(subject_IDs, desc='Updating vortex info'):
         is_vortex[np.where(IDs == subject)[0]] = True
 
-    with open('is_vortex.json', 'w') as outfile:
-        json.dump(is_vortex.tolist(), outfile)
+    with open('is_vortex.json.lock', 'w') as lockfile:
+        F.flock(lockfile.fileno(), F.LOCK_EX)
+        with open('is_vortex.json', 'w') as outfile:
+            json.dump(is_vortex.tolist(), outfile)
 
     return f"Done at {datetime.datetime.now()}"
 
@@ -424,7 +432,6 @@ def update_vortex_list():
 # refresh the subject list on startup
 generate_new_vortex_export()
 
-update_vortex_list()
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
