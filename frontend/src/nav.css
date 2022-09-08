@@ -24,6 +24,7 @@ section.feedback-container {
 	width: 70em;
 	text-align: center;
 	color: var(--bright-text);
+	font-size: 1.2em;
 }
 
 section.feedback-container a {
