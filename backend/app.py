@@ -14,6 +14,9 @@ from flask_cors import CORS
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
+import fcntl as F
+import os
+
 
 # jupiter's parameters for projection
 flat = 0.06487
@@ -21,14 +24,14 @@ re = 71492e3
 rp = re*(1 - flat)
 pixres = 25./np.radians(1)
 
-# empty list to hold values from subject
-# metadata import
+# create a copy of the variables
+# for local usage so we don't have
+# to lock all the time
 urls = []
 lats = []
 lons = []
 PJs = []
 IDs = []
-is_vortex = []
 
 plotly_type = {'hist': 'histogram', 'scatter': 'scattergl'}
 
@@ -278,11 +281,16 @@ def create_plot():
                   'marker': {'color': ['dodgerblue']*len(x)}
                   }
 
+    with open('is_vortex.json.lock', 'w') as lockfile:
+        F.flock(lockfile.fileno(), F.LOCK_SH)
+        with open('is_vortex.json', 'r') as infile:
+            is_vortex = json.load(infile)
+
     return json.dumps({'data': output, 'layout': layout,
                        'subject_urls': urls.tolist(),
                        'lats': lats.tolist(), 'lons': lons.tolist(),
                        'PJs': PJs.tolist(),
-                       "IDs": IDs.tolist(), "is_vortex": is_vortex.tolist()})
+                       "IDs": IDs.tolist(), "is_vortex": is_vortex})
 
 
 @app.route('/backend/get-random-images/', methods=['POST'])
@@ -354,20 +362,18 @@ def create_export():
     return json.dumps({'filedata': output})
 
 
-@app.route('/backend/refresh-vortex-list/', methods=['GET'])
 def generate_new_vortex_export():
     '''
         Automated job that refreshes the subject data to
         get the new list of vortices
     '''
-    global lons, lats, PJs, urls, IDs, is_vortex
+    global lons, lats, PJs, urls, IDs
 
     urls_loc = []
     lats_loc = []
     lons_loc = []
     PJs_loc = []
     IDs_loc = []
-    is_vortex_loc = []
 
     # prepare the subject data
     subject_data = ascii.read('jvh_subjects.csv', format='csv')
@@ -385,13 +391,6 @@ def generate_new_vortex_export():
             PJs_loc.append(int(meta['perijove']))
             urls_loc.append(ast.literal_eval(datai['locations'][0])["0"])
             IDs_loc.append(int(subject_id))
-
-            # save the info on whether this subject contains a vortex
-            # so we can filter in the frontend
-            if 105808 in np.unique(datai['subject_set_id']):
-                is_vortex_loc.append(True)
-            else:
-                is_vortex_loc.append(False)
         except KeyError:
             continue
 
@@ -400,15 +399,39 @@ def generate_new_vortex_export():
     lats = np.asarray(lats_loc)
     PJs = np.asarray(PJs_loc)
     urls = np.asarray(urls_loc)
-    is_vortex = np.asarray(is_vortex_loc)
+
+    update_vortex_list()
 
     print(f"Done {datetime.datetime.now()}", file=sys.stderr)
 
     return "Done"
 
 
+@app.route('/backend/refresh-vortex-list/', methods=['GET'])
+def update_vortex_list():
+    is_vortex = np.asarray([False]*len(lons))
+    # prepare the subject data
+    subject_data = ascii.read('jvh_subjects.csv', format='csv')
+
+    subject_data = subject_data[subject_data['subject_set_id'] == 105808]
+
+    subject_ID_list = np.asarray(subject_data['subject_id'])
+    subject_IDs = np.unique(subject_ID_list)
+
+    for subject in tqdm.tqdm(subject_IDs, desc='Updating vortex info'):
+        is_vortex[np.where(IDs == subject)[0]] = True
+
+    with open('is_vortex.json.lock', 'w') as lockfile:
+        F.flock(lockfile.fileno(), F.LOCK_EX)
+        with open('is_vortex.json', 'w') as outfile:
+            json.dump(is_vortex.tolist(), outfile)
+
+    return f"Done at {datetime.datetime.now()}"
+
+
 # refresh the subject list on startup
 generate_new_vortex_export()
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
