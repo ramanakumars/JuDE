@@ -15,7 +15,6 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import fcntl as F
-import os
 
 
 # jupiter's parameters for projection
