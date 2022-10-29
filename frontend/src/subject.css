@@ -52,4 +52,25 @@ div.loading div.noloading {
 	left: 0;
 }
 
+section#subject-talk-container {
+	width: 100%;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	align-content: center;
+	padding: 0.25em;
+}
 
+a.talk-link {
+	min-width: 15em;
+	text-align: center;
+	line-height: 2.5em;
+	background: var(--secondary);
+	color: var(--dark-text);
+	text-decoration: none;
+}
+
+a.talk-link:hover {
+	background: var(--tertiary);
+}
