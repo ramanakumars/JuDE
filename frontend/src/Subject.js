@@ -24,6 +24,7 @@ class Subject extends React.Component {
 
 	render() {
 		document.title = 'JuDE: Subject ' + this.state.subject_id;
+		const talklink = "https://www.zooniverse.org/projects/ramanakumars/jovian-vortex-hunter/talk/subjects/" + this.state.subject_id;
 		return (
 			<article id='main'>
 				<MainNav target="subject"/>
@@ -31,6 +32,11 @@ class Subject extends React.Component {
 					<LoadingPage ref={this.loadingdiv} enable={true} />
 					<section id='subject-info'>
 						<SubjectViewer  subject_id={this.state.subject_id} ref={this.subject_viewer}/>
+						<section id='subject-talk-container'>
+							<a href={talklink} class='talk-link' target='_blank' rel="noreferrer">
+								View this subject on Talk
+							</a>
+						</section>
 						<SubjectMosaicContextViewer subject_id={this.state.subject_id} 
 							type='global' ref={this.globe_viewer} />
 					</section>
