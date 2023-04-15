@@ -14,23 +14,26 @@ from flask_cors import CORS
 import plotly
 import plotly.express as px
 import plotly.graph_objects as go
-import fcntl as F
+
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
 
 
 # jupiter's parameters for projection
 flat = 0.06487
 re = 71492e3
-rp = re*(1 - flat)
-pixres = 25./np.radians(1)
+rp = re * (1 - flat)
+pixres = 25. / np.radians(1)
 
-# create a copy of the variables
-# for local usage so we don't have
-# to lock all the time
-urls = []
-lats = []
-lons = []
-PJs = []
-IDs = []
+data = None
 
 plotly_type = {'hist': 'histogram', 'scatter': 'scattergl'}
 
@@ -87,8 +90,8 @@ def get_context_image(subject_id):
 
     # roll the longitude axis so that the subject
     # is in the center of the mosaic
-    nroll = int(lon*25)
-    lon0 = lon - nroll/25.
+    nroll = int(lon * 25)
+    lon0 = lon - nroll / 25.
 
     # create a grid of lat/lon values so that
     # we can draw a contour of lat/lon showing the subject
@@ -97,10 +100,10 @@ def get_context_image(subject_id):
     lats = np.linspace(-90, 90, 4500)
 
     # subset the image (to speed up processing)
-    lat_mask = (lats > lat-25) & (lats < lat+25)
+    lat_mask = (lats > lat - 25) & (lats < lat + 25)
     img_roll = np.roll(img[lat_mask, :, :], -nroll, axis=1)
 
-    lon_mask = (lons > lon0-25) & (lons < lon0+25)
+    lon_mask = (lons > lon0 - 25) & (lons < lon0 + 25)
     img_sub = img_roll[:, lon_mask, :]
 
     # get the subset of the grid
@@ -110,12 +113,12 @@ def get_context_image(subject_id):
     # find the physical extents again for this image
     LON, LAT = np.meshgrid(lon_sub, lat_sub)
 
-    rln = re/np.sqrt(1. + ((rp/re)*np.tan(np.radians(LAT)))**2.)
-    rlt = rln/(np.cos(np.radians(LAT))*((np.sin(np.radians(LAT)))**2. +
-                                        ((re/rp)*np.cos(np.radians(LAT)))**2.))
+    rln = re / np.sqrt(1. + ((rp / re) * np.tan(np.radians(LAT)))**2.)
+    rlt = rln / (np.cos(np.radians(LAT)) * ((np.sin(np.radians(LAT)))**2. +
+                                            ((re / rp) * np.cos(np.radians(LAT)))**2.))
 
-    dX = rln*np.abs(np.radians(LON - lon0))
-    dY = rlt*np.abs(np.radians(LAT - lat))
+    dX = rln * np.abs(np.radians(LON - lon0))
+    dY = rlt * np.abs(np.radians(LAT - lat))
 
     # we don't care about the parts of the image
     # outside the subject (for the purpose of drawing the contour)
@@ -134,14 +137,14 @@ def get_context_image(subject_id):
     plt.close()
 
     # rotate the mosaic back to the original axis
-    lon_sub = lon_sub + nroll/25.
+    lon_sub = lon_sub + nroll / 25.
     lon_sub[lon_sub > 180] -= 360.
 
     # same for the contour vertices
-    c1vert0x = c1vert0[:, 0] + nroll/25.
+    c1vert0x = c1vert0[:, 0] + nroll / 25.
     c1vert0x[c1vert0x > 180.] -= 360.
 
-    c2vert0x = c2vert0[:, 0] + nroll/25.
+    c2vert0x = c2vert0[:, 0] + nroll / 25.
     c2vert0x[c2vert0x > 180.] -= 360.
 
     # plot all this in plotly and send it to the frontend
@@ -165,8 +168,8 @@ def get_context_image(subject_id):
                       autosize=True,
                       paper_bgcolor='white')
     fig.update(layout_showlegend=False)
-    fig.update_yaxes(range=[lat-10, lat+10], autorange=False)
-    fig.update_xaxes(range=[lon-15, lon+15], autorange=False)
+    fig.update_yaxes(range=[lat - 10, lat + 10], autorange=False)
+    fig.update_xaxes(range=[lon - 15, lon + 15], autorange=False)
 
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
@@ -239,15 +242,15 @@ def create_plot():
         # create custom bins for each variable key
         # knowing what the axis extents are
         if metadata_key == 'latitude':
-            values = lats.tolist()
+            values = np.asarray(data['latitude']).tolist()
             bins = np.arange(-70, 70, 5).tolist()
 
         elif metadata_key == 'longitude':
-            values = lons.tolist()
+            values = np.asarray(data['longitude']).tolist()
             bins = np.arange(-180, 180, 10).tolist()
 
         elif metadata_key == 'perijove':
-            values = PJs.tolist()
+            values = np.asarray(data['perijove']).tolist()
             bins = np.arange(13, 36, 1).tolist()
 
         # create the data output for the frontend to plot this out
@@ -255,41 +258,27 @@ def create_plot():
                   'xbins': {'start': min(bins), 'end': max(bins),
                             'size': (bins[1] - bins[0])},
                   'nbinsx': len(bins),
-                  'marker': {'color': ['#2e86c1']*len(bins)}}
+                  'marker': {'color': ['#2e86c1'] * len(bins)}}
     elif plot_type == 'scatter':
         # repeat for scatter, but now there are two variables
         layout['xaxis'] = {'title': meta_x}
         layout['yaxis'] = {'title': meta_y}
 
-        if meta_x == 'latitude':
-            x = lats.tolist()
-        elif meta_x == 'longitude':
-            x = lons.tolist()
-        elif meta_x == 'perijove':
-            x = PJs.tolist()
-
-        if meta_y == 'latitude':
-            y = lats.tolist()
-        elif meta_y == 'longitude':
-            y = lons.tolist()
-        elif meta_y == 'perijove':
-            y = PJs.tolist()
+        if meta_x in ['longitude', 'latitude', 'perijove']:
+            x = np.asarray(data[meta_x]).tolist()
+        if meta_y in ['longitude', 'latitude', 'perijove']:
+            y = np.asarray(data[meta_y]).tolist()
 
         output = {'x': x, 'y': y, 'mode': 'markers',
                   'type': plotly_type[plot_type],
-                  'marker': {'color': ['dodgerblue']*len(x)}
+                  'marker': {'color': ['dodgerblue'] * len(x)}
                   }
 
-    with open('is_vortex.json.lock', 'w') as lockfile:
-        F.flock(lockfile.fileno(), F.LOCK_SH)
-        with open('is_vortex.json', 'r') as infile:
-            is_vortex = json.load(infile)
+    names = data.colnames
+    subject_data = [dict(zip(names, row)) for row in data]
 
     return json.dumps({'data': output, 'layout': layout,
-                       'subject_urls': urls.tolist(),
-                       'lats': lats.tolist(), 'lons': lons.tolist(),
-                       'PJs': PJs.tolist(),
-                       "IDs": IDs.tolist(), "is_vortex": is_vortex})
+                       'subject_data': subject_data}, cls=NpEncoder)
 
 
 @app.route('/backend/get-random-images/', methods=['POST'])
@@ -301,13 +290,13 @@ def get_rand_imgs():
     if request.method == 'POST':
         n_images = request.json['n_images']
 
-    idxs = np.random.randint(0, len(lats), (n_images,))
+    idxs = np.random.randint(0, len(data), (n_images,))
 
-    sub_lats = lats[idxs].tolist()
-    sub_lons = lons[idxs].tolist()
-    sub_urls = urls[idxs].tolist()
-    sub_PJs = PJs[idxs].tolist()
-    sub_IDs = IDs[idxs].tolist()
+    sub_lons = np.asarray(data['longitude'][idxs]).tolist()
+    sub_lats = np.asarray(data['latitude'][idxs]).tolist()
+    sub_IDs = np.asarray(data['subject_ID'][idxs]).tolist()
+    sub_PJs = np.asarray(data['perijove'][idxs]).tolist()
+    sub_urls = np.asarray(data['url'][idxs]).tolist()
 
     return json.dumps({'lons': sub_lons, 'lats': sub_lats, 'IDs': sub_IDs,
                        'PJs': sub_PJs, 'urls': sub_urls})
@@ -366,13 +355,7 @@ def generate_new_vortex_export():
         Automated job that refreshes the subject data to
         get the new list of vortices
     '''
-    global lons, lats, PJs, urls, IDs
-
-    urls_loc = []
-    lats_loc = []
-    lons_loc = []
-    PJs_loc = []
-    IDs_loc = []
+    global data
 
     # prepare the subject data
     subject_data = ascii.read('jvh_subjects.csv', format='csv')
@@ -380,24 +363,31 @@ def generate_new_vortex_export():
     subject_ID_list = np.asarray(subject_data['subject_id'])
     subject_IDs = np.unique(subject_data['subject_id'])
 
-    for subject_id in tqdm.tqdm(subject_IDs):
+    IDs = []
+    urls = []
+    lons = []
+    lats = []
+    PJs = []
+    is_vortex = []
+
+    for subject_id in tqdm.tqdm(subject_IDs, file=sys.stderr):
         try:
             datai = subject_data[np.where(subject_ID_list == subject_id)[0]]
 
             meta = ast.literal_eval(datai['metadata'][0])
-            lons_loc.append(float(meta['longitude']))
-            lats_loc.append(float(meta['latitude']))
-            PJs_loc.append(int(meta['perijove']))
-            urls_loc.append(ast.literal_eval(datai['locations'][0])["0"])
-            IDs_loc.append(int(subject_id))
+
+            lons.append(float(meta['longitude']))
+            lats.append(float(meta['latitude']))
+            PJs.append(int(meta['perijove']))
+            is_vortex.append(0)
+            IDs.append(subject_id)
+            urls.append(ast.literal_eval(datai['locations'][0])["0"])
         except KeyError:
             continue
 
-    IDs = np.asarray(IDs_loc)
-    lons = np.asarray(lons_loc)
-    lats = np.asarray(lats_loc)
-    PJs = np.asarray(PJs_loc)
-    urls = np.asarray(urls_loc)
+    data = Table([IDs, urls, lons, lats, PJs, is_vortex],
+                 names=('subject_ID', 'url', 'longitude', 'latitude', 'perijove', 'is_vortex'),
+                 dtype=('i8', 'U100', 'f8', 'f8', 'i4', 'i2'))
 
     update_vortex_list()
 
@@ -408,7 +398,6 @@ def generate_new_vortex_export():
 
 @app.route('/backend/refresh-vortex-list/', methods=['GET'])
 def update_vortex_list():
-    is_vortex = np.asarray([False]*len(lons))
     # prepare the subject data
     subject_data = ascii.read('jvh_subjects.csv', format='csv')
 
@@ -418,12 +407,7 @@ def update_vortex_list():
     subject_IDs = np.unique(subject_ID_list)
 
     for subject in tqdm.tqdm(subject_IDs, desc='Updating vortex info'):
-        is_vortex[np.where(IDs == subject)[0]] = True
-
-    with open('is_vortex.json.lock', 'w') as lockfile:
-        F.flock(lockfile.fileno(), F.LOCK_EX)
-        with open('is_vortex.json', 'w') as outfile:
-            json.dump(is_vortex.tolist(), outfile)
+        data['is_vortex'][data['subject_ID'] == subject] = 1
 
     return f"Done at {datetime.datetime.now()}"
 
