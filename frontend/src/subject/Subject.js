@@ -1,8 +1,8 @@
 import React from "react";
 import axios from "axios";
 import Plot from "react-plotly.js";
-import LoadingPage from "./LoadingPage.js";
-import MainNav from "./Nav.js";
+import LoadingPage from "../util/LoadingPage.js";
+import MainNav from "../util/Nav.js";
 
 class Subject extends React.Component {
     constructor(props) {

@@ -1,19 +1,18 @@
 import React from "react";
 import Plot from "react-plotly.js";
-import MainNav from "./Nav.js";
-import SubjectImage from "./SubjectImage.js";
+import MainNav from "../util/Nav.js";
+import SubjectImage from "../subject/SubjectImage.js";
 import MultiRangeSlider from "multi-range-slider-react";
-import LoadingPage from "./LoadingPage.js";
+import LoadingPage from "../util/LoadingPage.js";
 
 const var_names = {
     hist: ["x"],
     scatter: ["x", "y"],
 };
 
-const variables = { Latitude: "latitude", Longitude: "longitude", Perijove: "perijove" };
-
 const blue = "#2e86c1";
 const red = "#922b21";
+const plotly_type = {'hist': 'histogram', 'scatter': 'scattergl'};
 
 class Explorer extends React.Component {
     /*
@@ -22,6 +21,10 @@ class Explorer extends React.Component {
      */
     constructor(props) {
         super(props);
+
+		this.state = {
+			'variables': []
+		};
 
         // create references for the child components
         this.choose_plot_form = React.createRef();
@@ -38,6 +41,34 @@ class Explorer extends React.Component {
         this.filter = this.filter.bind(this);
     }
 
+	componentDidMount() {
+		this.refreshData();
+	}
+
+	refreshData() {
+        fetch("/backend/get-exploration-data/", {
+            method: "GET",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+        }).then((result) => result.json()).then((data) => {
+			// get the subject metadata and the list of variables
+			// from the backend API
+			this.subject_plotter.current.setState({
+				'subject_data': data.subject_data,
+				'variables': data.variables
+			});
+			this.setState({
+				'variables': data.variables
+			});
+			this.choose_plot_form.current.setState({
+				'variables': data.variables
+			});
+		});
+		
+	}
+
     handleSubmit(event) {
         /*
          * handles the "Plot!" click by fetching the relevant
@@ -48,51 +79,40 @@ class Explorer extends React.Component {
         event.preventDefault();
 
         // start building the data structure to send to the backend
-        var data = { plot_type: this.choose_plot_form.current.state.chosen };
+        var plot_type = this.choose_plot_form.current.state.chosen;
 
-        const chosen_vars = var_names[data.plot_type];
+        const chosen_vars = var_names[plot_type];
 
         // get a list of chosen variables from the form elements
+		var plot_variables = {};
         for (var i = 0; i < chosen_vars.length; i++) {
             if (event.target.elements[chosen_vars[i]].value === "") {
                 return;
             }
-            data[chosen_vars[i]] = event.target.elements[chosen_vars[i]].value;
+            plot_variables[chosen_vars[i]] = event.target.elements[chosen_vars[i]].value;
         }
 
-        // send to the backend
-        fetch("/backend/plot-exploration/", {
-            method: "POST",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-            },
-            // the input/output are in JSON format
-            body: JSON.stringify(data),
-        })
-            .then((result) => result.json())
-            .then((plotly_meta) => {
-                if (!plotly_meta.error) {
-                    // layout parameters for the Plotly element
-                    var layout = plotly_meta.layout;
-                    layout["hovermode"] = "closest";
-                    layout["width"] = 1200;
-                    layout["height"] = 600;
+		var layout = {};
+		layout["hovermode"] = "closest";
+		layout["width"] = 1200;
+		layout["height"] = 600;
 
-                    // send the retrieved data to the plotter component which will
-                    // save the data and distribute it as needed to both the
-                    // subject image display component and the plotly component
-                    this.subject_plotter.current.set_data(
-                        plotly_meta,
-                        layout,
-                        data.plot_type,
-                        this.subset_PJ.current.state.minValue,
-                        this.subset_PJ.current.state.maxValue,
-                        this.vortex_selector.current.state.checked
-                    );
-                } else {
-                }
-            });
+		if (plot_type === "hist") {
+			layout["xaxis"] = {"title": plot_variables['x']}
+		} else if (plot_type === "scatter") {
+			layout["xaxis"] = {"title": plot_variables['x']}
+			layout["yaxis"] = {"title": plot_variables['y']}
+		}
+
+        // send to the backend
+		this.subject_plotter.current.set_data(
+			plot_variables,
+			layout,
+			plot_type,
+			this.subset_PJ.current.state.minValue,
+			this.subset_PJ.current.state.maxValue,
+			this.vortex_selector.current.state.checked
+		);
     }
 
     filter(event) {
@@ -118,6 +138,7 @@ class Explorer extends React.Component {
                     <section id="plot-info">
                         <ChoosePlotType
                             ref={this.choose_plot_form}
+							variables={this.state.variables}
                             onSubmit={this.handleSubmit}
                         />
                         <SubsetPJ ref={this.subset_PJ} onChange={this.filter} />
@@ -151,17 +172,63 @@ class PlotContainer extends React.Component {
         this.handleSelect = this.handleSelect.bind(this);
     }
 
-    set_data(plotly_meta, layout, plot_type, PJstart, PJend, vortex_only) {
+    set_data(plot_variables, layout, plot_type, PJstart, PJend, vortex_only) {
         /*
          * main function for setting the data received from the backend
          * immediately calls `filter_PJ` which calls the
          * `set_plot_data` to set the plotly data
          */
+
+		var data = {}
+		if(plot_type === "hist") {
+			var metadata_key = plot_variables['x']
+
+			var values = this.state.subject_data.map((data) => (
+				data[metadata_key]
+			));
+
+			var binstart = 0;
+			var binend = 0;
+			var binwidth = 0;
+			var nbins = 0;
+			if(metadata_key === "latitude") {
+				binstart = -70;
+				binend = 70;
+				binwidth = 5;
+				nbins = 28;
+			} else if (metadata_key === "longitude") {
+				binstart = -180;
+				binend = 180;
+				binwidth = 10;
+				nbins = 36;
+			} else if (metadata_key === "perijove") {
+				binstart = 13;
+				binend = 36;
+				binwidth = 1;
+				nbins = 24;
+			}
+
+			data = {'x': values, 'type': plotly_type[plot_type],
+				'xbins': {'start': binstart, 'end': binend, 'size': binwidth},
+				'nbinsx': nbins, 
+				'marker': {'color': Array(nbins).fill('#2e86c1') }
+			};
+		} else if (plot_type === "scatter") {
+			var data_x = this.state.subject_data.map((data) => (
+				data[plot_variables['x']]));
+			var data_y = this.state.subject_data.map((data) => (
+				data[plot_variables['y']]));
+			
+			data = {'x': data_x, 'y': data_y, 'mode': 'markers',
+				'type': plotly_type[plot_type],
+				'marker': {'color': Array(data_x.length).fill("dodgerblue")}
+			};
+		}
+
         this.setState(
             {
-                data: plotly_meta.data,
+                data: data,
                 layout: layout,
-                subject_data: plotly_meta.subject_data,
                 plot_name: plot_type,
             },
             function () {
@@ -301,7 +368,7 @@ class ChoosePlotType extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            variables: variables,
+            variables: props.variables,
             chosen: "hist",
         };
 
@@ -356,7 +423,7 @@ class ChoosePlotType extends React.Component {
                 <section id="variable-picker">
                     <CreatePlotForm
                         variables={this.state.variables}
-                        key={this.state.chosen}
+                        key={this.state.chosen + this.state.variables}
                         plot_name={this.state.chosen}
                         var_names={var_names[this.state.chosen]}
                         ref={this.variable_form}
@@ -431,7 +498,7 @@ class CreatePlotForm extends React.Component {
                                         value={vi.variable}
                                         key={vx.name + vi.name + "_label"}
                                     >
-                                        {vi.name}
+                                        {vi.variable}
                                     </option>
                                 ))}
                             </select>
@@ -506,7 +573,7 @@ class VortexSelector extends React.Component {
                     onChange={this.handleInput}
                     checked={this.state.checked}
                 />
-                <label for="vortex_only">Show vortices only </label>
+                <label htmlFor="vortex_only">Show vortices only </label>
             </div>
         );
     }
@@ -532,6 +599,7 @@ class SubjectPlotter extends React.Component {
 
     handleHover(event_data) {
         var data = [];
+		var colors = [];
         if (this.state.plot_name === "hist") {
             var binNumber = [];
             for (var i = 0; i < event_data.points[0].pointNumbers.length; i++) {
@@ -542,12 +610,12 @@ class SubjectPlotter extends React.Component {
             binNumber = [...new Set(binNumber)];
 
             // change the bin corresponding to the hover data
-            var colors = new Array(this.state.data[0].marker.color.length).fill(blue);
+            colors = new Array(this.state.data[0].marker.color.length).fill(blue);
             for (i = 0; i < binNumber.length; i++) {
                 colors[binNumber[i]] = red;
             }
         } else if (this.state.plot_name === "scatter") {
-            var colors = new Array(this.state.data[0].x.length).fill(blue);
+            colors = new Array(this.state.data[0].x.length).fill(blue);
             for (i = 0; i < event_data.points.length; i++) {
                 data.push(this.state.subject_data[event_data.points[i].pointNumber]);
                 colors[event_data.points[i].pointNumber] = red;

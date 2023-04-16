@@ -1,10 +1,10 @@
 import React from "react";
 
-import subject_viewer from "./images/subject_viewer_annotated.png";
-import explore_data from "./images/explore_data_annotated.png";
+import subject_viewer from "../images/subject_viewer_annotated.png";
+import explore_data from "../images/explore_data_annotated.png";
 
-import scatter from "./images/scatter.png";
-import hist from "./images/hist.png";
+import scatter from "../images/scatter.png";
+import hist from "../images/hist.png";
 
 class MainNav extends React.Component {
     constructor(props) {
@@ -25,7 +25,7 @@ class MainNav extends React.Component {
                 </section>
 
                 <section className="nav">
-                    {(this.state.target == "explore" || this.state.target == "subject") && (
+                    {(this.state.target === "explore" || this.state.target === "subject") && (
                         <Help target={this.state.target} />
                     )}
 
@@ -55,10 +55,10 @@ class Help extends React.Component {
     render() {
         return (
             <section className="help">
-                <a href="#" onClick={this.toggleHelp}>
-                    <i class="material-icons">help</i>
-                </a>
-                {this.state.showHelp == true && <HelpText target={this.state.target} />}
+                <button onClick={this.toggleHelp}>
+                    <i className="material-icons">help</i>
+                </button>
+                {this.state.showHelp === true && <HelpText target={this.state.target} />}
             </section>
         );
     }
@@ -75,8 +75,8 @@ class HelpText extends React.Component {
         return (
             <section className="helptext-container">
                 <section className="helptext">
-                    {this.state.target == "explore" && exploreHelpText()}
-                    {this.state.target == "subject" && subjectHelpText()}
+                    {this.state.target === "explore" && exploreHelpText()}
+                    {this.state.target === "subject" && subjectHelpText()}
                 </section>
             </section>
         );
@@ -88,7 +88,7 @@ const subjectHelpText = () => {
         <div>
             <p>
                 The subject page contains three things:
-                <img src={subject_viewer} />
+                <img src={subject_viewer} alt="Example of a subject specific page"/>
                 <ol>
                     <li>
                         On the left panel, you will see the <b>subject image</b>
@@ -147,7 +147,7 @@ const exploreHelpText = () => {
 
             <p>
                 Each element is described in detail below:
-                <img src={explore_data} />
+                <img src={explore_data} alt="Overview of the exploration page"/>
                 <ol>
                     <li>
                         On the left panel, you will see a set of options for creating plots. In
@@ -168,7 +168,7 @@ const exploreHelpText = () => {
                                 variable to use for plotting.
                             </li>
 
-                            <img src={hist} />
+                            <img src={hist} alt="Example of a histogram"/>
 
                             <li>
                                 <b>Scatter</b>: A scatter plot is 2-dimensional plot type, and
@@ -179,7 +179,7 @@ const exploreHelpText = () => {
                                 choose the x- and the y-variable to plot.
                             </li>
 
-                            <img src={scatter} />
+                            <img src={scatter} alt="Example of a scatter plot"/>
                         </ul>
                     </li>
 

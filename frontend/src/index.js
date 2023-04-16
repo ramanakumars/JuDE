@@ -1,15 +1,15 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
-import "./main.css";
-import "./explorer.css";
-import "./subject.css";
-import "./nav.css";
-import "./index.css";
-import Subject from "./Subject.js";
-import Explorer from "./Explorer";
-import SubjectImage from "./SubjectImage.js";
-import MainNav from "./Nav.js";
+import "./css/main.css";
+import "./css/explorer.css";
+import "./css/subject.css";
+import "./css/nav.css";
+import "./css/index.css";
+import Subject from "./subject/Subject.js";
+import Explorer from "./explorer/Explorer.js";
+import SubjectImage from "./subject/SubjectImage.js";
+import MainNav from "./util/Nav.js";
 
 import scatter from "./images/scatter.png";
 import hist from "./images/hist.png";
@@ -33,7 +33,10 @@ function ExplorerApp() {
 class Home extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { nimages: 8 };
+        this.state = { 
+			nimages: 8,
+			subject_data: []
+		};
     }
 
     async componentDidMount() {
@@ -53,31 +56,12 @@ class Home extends React.Component {
             .then((result) => result.json())
             .then((data) => {
                 this.setState({
-                    lons: data.lons,
-                    lats: data.lats,
-                    urls: data.urls,
-                    PJs: data.urls,
-                    IDs: data.IDs,
+					subject_data: data.subject_data
                 });
             });
     }
 
     render() {
-        var data = [];
-
-        if (this.state.urls != null) {
-            for (var i = 0; i < this.state.nimages; i++) {
-                data.push({
-                    idx: i,
-                    url: this.state.urls[i],
-                    ID: this.state.IDs[i],
-                    lon: this.state.lons[i],
-                    lat: this.state.lats[i],
-                    PJ: this.state.PJs[i],
-                });
-            }
-        }
-
         return (
             <article id="main">
                 <MainNav />
@@ -85,14 +69,11 @@ class Home extends React.Component {
                     <section id="hero">
                         <h1>Welcome to JuDE (JunoCam Data Explorer)!</h1>
                         <section id="mosaic-images">
-                            {data.map((data) => (
+                            {this.state.subject_data.map((d) => (
                                 <SubjectImage
-                                    key={data.ID + "_mosaic"}
-                                    lon={data.lon}
-                                    lat={data.lat}
-                                    ID={data.ID}
-                                    PJ={data.PJ}
-                                    url={data.url}
+                                    key={d.subject_ID + "_mosaic"}
+									metadata={d}
+									url={d.url}
                                     style={{}}
                                 />
                             ))}
@@ -126,14 +107,14 @@ class Home extends React.Component {
                                 locations of all the subjects by plotting latitude against
                                 longitude.
                             </li>
-                            <img src={scatter} />
+                            <img src={scatter} alt="Example of a scatter plot"/>
                             <li>
                                 <b>Histogram</b>: The histogram allows you to see how many
                                 subjects correspond to a given range of values. For examples,
                                 plotting a histogram of perijoves shows you how many images are
                                 taken from each perijove.
                             </li>
-                            <img src={hist} />
+                            <img src={hist} alt="Example of a histogram"/>
                         </ul>
 
                         <p>
@@ -143,7 +124,7 @@ class Home extends React.Component {
                             bottom left box.
                         </p>
 
-                        <img src={tutorial} />
+                        <img src={tutorial} alt="Tutorial to show how hover state works"/>
 
                         <h2>Subject specific information</h2>
 
@@ -155,7 +136,7 @@ class Home extends React.Component {
                             the features seen in the subject.
                         </p>
 
-                        <img src={subject_viewer} />
+                        <img src={subject_viewer} alt="Example of a subject specific page"/>
                     </section>
                 </section>
             </article>

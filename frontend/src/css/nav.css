@@ -64,11 +64,14 @@ section.help {
 	position: relative;
 }
 
-section.help a {
+section.help button {
 	color: var(--bright-text);
+	background: transparent;
+	border: none !important;
+	cursor: pointer;
 }
 
-section.help a:hover {
+section.help button:hover {
 	color: var(--secondary);
 }
 
