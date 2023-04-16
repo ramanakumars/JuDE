@@ -220,65 +220,15 @@ def get_mosaic_image(subject_id):
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-@app.route('/backend/plot-exploration/', methods=['POST'])
-def create_plot():
-    '''
-        Creates a Plotly plot with the requested variables and plot type
-    '''
-    if request.method == 'POST':
-        # get the type of plot requested (currently hist/scatter)
-        plot_type = request.json['plot_type']
-        if plot_type not in ['scatter']:
-            metadata_key = request.json['x']
-        else:
-            meta_x = request.json['x']
-            meta_y = request.json['y']
+@app.route('/backend/get-exploration-data/', methods=['GET'])
+def get_exploration_data(dsub=None):
+    if dsub is None:
+        dsub = data
+    names = dsub.colnames
+    subject_data = [dict(zip(names, row)) for row in dsub]
+    variables = [n for n in names if n not in ['url', 'subject_ID', 'is_vortex']]
 
-    layout = {}
-    if plot_type == 'hist':
-        # for histogram, there is only one axis
-        layout['xaxis'] = {'title': metadata_key}
-
-        # create custom bins for each variable key
-        # knowing what the axis extents are
-        if metadata_key == 'latitude':
-            values = np.asarray(data['latitude']).tolist()
-            bins = np.arange(-70, 70, 5).tolist()
-
-        elif metadata_key == 'longitude':
-            values = np.asarray(data['longitude']).tolist()
-            bins = np.arange(-180, 180, 10).tolist()
-
-        elif metadata_key == 'perijove':
-            values = np.asarray(data['perijove']).tolist()
-            bins = np.arange(13, 36, 1).tolist()
-
-        # create the data output for the frontend to plot this out
-        output = {'x': values, 'type': plotly_type[plot_type],
-                  'xbins': {'start': min(bins), 'end': max(bins),
-                            'size': (bins[1] - bins[0])},
-                  'nbinsx': len(bins),
-                  'marker': {'color': ['#2e86c1'] * len(bins)}}
-    elif plot_type == 'scatter':
-        # repeat for scatter, but now there are two variables
-        layout['xaxis'] = {'title': meta_x}
-        layout['yaxis'] = {'title': meta_y}
-
-        if meta_x in ['longitude', 'latitude', 'perijove']:
-            x = np.asarray(data[meta_x]).tolist()
-        if meta_y in ['longitude', 'latitude', 'perijove']:
-            y = np.asarray(data[meta_y]).tolist()
-
-        output = {'x': x, 'y': y, 'mode': 'markers',
-                  'type': plotly_type[plot_type],
-                  'marker': {'color': ['dodgerblue'] * len(x)}
-                  }
-
-    names = data.colnames
-    subject_data = [dict(zip(names, row)) for row in data]
-
-    return json.dumps({'data': output, 'layout': layout,
-                       'subject_data': subject_data}, cls=NpEncoder)
+    return json.dumps({'subject_data': subject_data, 'variables': variables}, cls=NpEncoder)
 
 
 @app.route('/backend/get-random-images/', methods=['POST'])
@@ -292,14 +242,11 @@ def get_rand_imgs():
 
     idxs = np.random.randint(0, len(data), (n_images,))
 
-    sub_lons = np.asarray(data['longitude'][idxs]).tolist()
-    sub_lats = np.asarray(data['latitude'][idxs]).tolist()
-    sub_IDs = np.asarray(data['subject_ID'][idxs]).tolist()
-    sub_PJs = np.asarray(data['perijove'][idxs]).tolist()
-    sub_urls = np.asarray(data['url'][idxs]).tolist()
+    data_sub = data[idxs]
+    names = data.colnames
+    subject_data = [dict(zip(names, row)) for row in data_sub]
 
-    return json.dumps({'lons': sub_lons, 'lats': sub_lats, 'IDs': sub_IDs,
-                       'PJs': sub_PJs, 'urls': sub_urls})
+    return json.dumps({'subject_data': subject_data}, cls=NpEncoder)
 
 
 @app.route('/backend/create-export/', methods=['POST'])
