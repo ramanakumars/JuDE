@@ -24,6 +24,8 @@ class NpEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if isinstance(obj, np.bool_):
+            return bool(obj)
         return super(NpEncoder, self).default(obj)
 
 
@@ -34,8 +36,6 @@ rp = re * (1 - flat)
 pixres = 25. / np.radians(1)
 
 data = None
-
-plotly_type = {'hist': 'histogram', 'scatter': 'scattergl'}
 
 app = Flask(__name__)
 CORS(app)
@@ -226,9 +226,12 @@ def get_exploration_data(dsub=None):
         dsub = data
     names = dsub.colnames
     subject_data = [dict(zip(names, row)) for row in dsub]
-    variables = [n for n in names if n not in ['url', 'subject_ID', 'is_vortex']]
+    variables = [n for n in names if n not in ['url', 'subject_ID']]
+    dtypes = dict(zip(variables, [dsub[v].dtype.name for v in variables]))
 
-    return json.dumps({'subject_data': subject_data, 'variables': variables}, cls=NpEncoder)
+    return json.dumps({'subject_data': subject_data,
+                       'variables': variables,
+                       'dtypes': dtypes}, cls=NpEncoder)
 
 
 @app.route('/backend/get-random-images/', methods=['POST'])
@@ -334,7 +337,7 @@ def generate_new_vortex_export():
 
     data = Table([IDs, urls, lons, lats, PJs, is_vortex],
                  names=('subject_ID', 'url', 'longitude', 'latitude', 'perijove', 'is_vortex'),
-                 dtype=('i8', 'U100', 'f8', 'f8', 'i4', 'i2'))
+                 dtype=('i8', 'U100', 'f8', 'f8', 'i8', '?'))
 
     update_vortex_list()
 
