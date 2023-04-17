@@ -151,24 +151,24 @@ div.image-page button:hover {
 }
 
 
-div#filter-pj {
+div#filter {
 	width: 100%;
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: text-start;
 }
 
-div#filter-pj label {
+div#filter label {
 	width: 100%;
 }
 
-div#vortex_checkbox {
+div#selector_checkbox {
 	padding: 1em;
 	width: 100%;
 	box-sizing: border-box;
 }
 
-div#vortex_checkbox input {
+div#selector_checkbox input {
 
 }
 
