@@ -362,6 +362,44 @@ def update_vortex_list():
     return f"Done at {datetime.datetime.now()}"
 
 
+@app.route('/backend/upload-umap/', methods=['POST'])
+def upload_umap():
+    if request.method == 'POST':
+        umap_file = request.files.get('umap')
+    else:
+        return Response(status=500, response="Please upload a file!")
+
+    with io.BytesIO(umap_file.read()) as umap_file_data:
+        umap_file_data.seek(0)
+        umap_data = ascii.read(umap_file_data, format='csv')
+
+    if 'subject_ID' not in umap_data.colnames:
+        return Response(status=500, response="UMAP file must have a `subject_ID` column")
+
+    umap_subject_id = np.asarray(umap_data['subject_ID'][:])
+    subject_ids = np.asarray(data['subject_ID'][:])
+
+    n_umaps = len(umap_data.colnames) - 1
+    dsub = data.copy()
+
+    umap_coords = np.zeros((len(subject_ids), n_umaps))
+
+    for i, subject in enumerate(tqdm.tqdm(subject_ids, desc='Loading UMAP data')):
+        umap_idx = np.where(subject == umap_subject_id)[0]
+
+        if len(umap_idx) < 1:
+            return Response(status=500, response=f"{subject} not found in UMAP file!")
+
+        umap_coord_i = umap_data[umap_idx[0]]
+
+        umap_coords[i, :] = np.asarray([umap_coord_i[key] for key in umap_data.colnames if key not in ['subject_ID']])
+
+    for j in range(n_umaps):
+        dsub.add_column(umap_coords[:, j], name=f'UMAP{j+1}')
+
+    return get_exploration_data(dsub=dsub)
+
+
 # refresh the subject list on startup
 generate_new_vortex_export()
 
