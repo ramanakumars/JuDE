@@ -28,10 +28,10 @@ class Explorer extends React.Component {
     }
 
 	componentDidMount() {
-		this.refreshData();
+		this.getExplorationData();
 	}
 
-	refreshData() {
+	getExplorationData() {
         fetch("/backend/get-exploration-data/", {
             method: "GET",
             headers: {
@@ -41,37 +41,40 @@ class Explorer extends React.Component {
         }).then((result) => result.json()).then((data) => {
 			// get the subject metadata and the list of variables
 			// from the backend API
-			this.subject_plotter.current.setState({
-				'subject_data': data.subject_data,
-				'variables': data.variables,
-				'dtypes': data.dtypes
-			});
-
-			var variable_data = {};
-
-			for(let k in data.variables) {
-				var variable = data.variables[k];
-				variable_data[variable] = {};
-				variable_data[variable]['dtype'] = data.dtypes[variable];
-
-				var variable_sub = [];
-				for (let i=0; i < data.subject_data.length; i++) {
-					variable_sub.push(data.subject_data[i][variable]);
-				}
-
-				variable_data[variable]['minValue'] = Math.min(...variable_sub);
-				variable_data[variable]['maxValue'] = Math.max(...variable_sub);
-
-				if (variable_data[variable]['dtype'].includes('bool')) {
-					variable_data[variable]['checked'] = true;
-				}
-			};
-
-			this.plot_control.current.setState({
-				'variables': variable_data
-			});
+			this.refreshData(data);
 		});
-		
+	}
+
+	refreshData = (data) => {
+		this.subject_plotter.current.setState({
+			'subject_data': data.subject_data,
+			'variables': data.variables,
+			'dtypes': data.dtypes
+		});
+
+		var variable_data = {};
+
+		for(let k in data.variables) {
+			var variable = data.variables[k];
+			variable_data[variable] = {};
+			variable_data[variable]['dtype'] = data.dtypes[variable];
+
+			var variable_sub = [];
+			for (let i=0; i < data.subject_data.length; i++) {
+				variable_sub.push(data.subject_data[i][variable]);
+			}
+
+			variable_data[variable]['minValue'] = Math.min(...variable_sub);
+			variable_data[variable]['maxValue'] = Math.max(...variable_sub);
+
+			if (variable_data[variable]['dtype'].includes('bool')) {
+				variable_data[variable]['checked'] = true;
+			}
+		};
+
+		this.plot_control.current.setState({
+			'variables': variable_data
+		});
 	}
 
     handleSubmit(event) {
@@ -120,6 +123,21 @@ class Explorer extends React.Component {
 		);
     }
 
+	handleFileUpload = (e) => {
+		var data = new FormData();
+		data.append('umap', e.target[0].files[0]);
+
+        fetch("/backend/upload-umap/", {
+            method: "POST",
+			body: data
+        }).then((result) => result.json()).then((data) => {
+			// get the subject metadata and the list of variables
+			// from the backend API
+			this.refreshData(data);
+		});
+		
+	}
+
     filter(int_vars, bool_vars) {
         /*
          * handles the perijove slider for filtering the displayed data
@@ -140,6 +158,7 @@ class Explorer extends React.Component {
 						ref={ this.plot_control }
 						filter={ this.filter }
 						variables={{}}
+						handleFileUpload={ this.handleFileUpload }
 						handleSubmit={ this.handleSubmit } 
 					/>
                     <PlotContainer ref={ this.subject_plotter } />

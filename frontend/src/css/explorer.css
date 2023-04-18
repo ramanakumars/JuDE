@@ -234,3 +234,37 @@ div.subject-export-container button:hover {
     background-color: var(--tertiary);
     /* color: var(--bright-text); */
 }
+
+form.upload {
+    display: block; 
+    max-width: 400px;
+}
+
+form.upload input {
+    display: block; 
+    float: left; 
+    margin: 5px;
+    font-size: 1.0em;
+}
+
+form.upload label {
+	width: 100%;
+}
+
+form.upload input[type=file] {
+    width: 100%;
+}
+
+form.upload input[type=file]::file-selector-button {
+	width: 5rem;
+	line-height: 1.5rem;
+	font-family: Karla, Arial, Helvetica, sans-serif;
+	background-color: var(--secondary);
+	border: 0px;
+	cursor: pointer;
+	padding: 0;
+}
+
+form.upload input[type=file]::file-selector-button:hover {
+	background-color: var(--tertiary);
+}

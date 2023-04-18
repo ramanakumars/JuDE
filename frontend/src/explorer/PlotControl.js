@@ -1,5 +1,6 @@
 import React from "react";
 import MultiRangeSlider from "multi-range-slider-react";
+import MetadataUpload from "./MetadataUpload";
 
 export const var_names = {
     hist: ["x"],
@@ -16,6 +17,7 @@ export default class PlotControl extends React.Component {
 
 		this.choose_plot_form = React.createRef();
         this.variable_form = React.createRef();
+		this.metadata_upload = React.createRef();
 
 		this.handleSubmit = this.handleSubmit.bind(this);
 		this.handleChange = this.handleChange.bind(this);
@@ -134,6 +136,10 @@ export default class PlotControl extends React.Component {
 					/>
 				))
 				}
+				<MetadataUpload
+					ref={this.metadata_upload}
+					onSubmit={this.props.handleFileUpload}
+				/>
 			</section>
 		)
 	}
